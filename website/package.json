@@ -1,0 +1,16 @@
+{
+  "name": "website",
+  "type": "module",
+  "private": true,
+  "packageManager": "pnpm@10.2.1",
+  "scripts": {
+    "prepare:runtime": "node scripts/prepare-runtime.mjs",
+    "dev": "pnpm run prepare:runtime && astro dev",
+    "build": "pnpm run prepare:runtime && astro build",
+    "preview": "astro preview"
+  },
+  "dependencies": {
+    "astro": "5",
+    "fflate": "0.8"
+  }
+}

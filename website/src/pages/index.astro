@@ -1,0 +1,11 @@
+---
+import GameDirectory from '../components/GameDirectory.astro'
+import BaseLayout from '../layouts/BaseLayout.astro'
+import { loadGames } from '../lib/games'
+
+const games = await loadGames()
+---
+
+<BaseLayout title="Soluna Examples" description="Retro minimal browser cabinet for Soluna game examples.">
+  <GameDirectory games={games} />
+</BaseLayout>

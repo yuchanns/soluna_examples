@@ -1,0 +1,50 @@
+---
+interface GameEntry {
+  id: string
+  title: string
+  entry: string
+  width: number
+  height: number
+}
+
+interface Props {
+  games: GameEntry[]
+}
+
+const { games } = Astro.props
+const basePath = import.meta.env.BASE_URL
+---
+
+<section class="hero-panel">
+  <p class="eyebrow">Soluna Examples</p>
+  <h1 class="page-title">Game List</h1>
+  <p class="page-copy">
+    A small browser cabinet for the examples in this repository. Pick a cartridge, start it, and inspect the Lua source beside it.
+  </p>
+  <div class="hero-ledger">
+    <span>{String(games.length).padStart(2, '0')} cartridges</span>
+    <span>retro minimal cabinet</span>
+  </div>
+</section>
+
+<section class="directory-panel">
+  <div class="directory-head">
+    <span>index</span>
+    <span>title</span>
+    <span>size</span>
+    <span>action</span>
+  </div>
+  <ol class="directory-list">
+    {games.map((game, index) => (
+      <li class="directory-item">
+        <span class="directory-index">{String(index + 1).padStart(2, '0')}</span>
+        <div class="directory-main">
+          <a class="directory-link" href={`${basePath}games/${game.id}/`}>{game.title}</a>
+          <p class="directory-subtitle">{game.entry}</p>
+        </div>
+        <span class="directory-size">{game.width} x {game.height}</span>
+        <a class="directory-action" href={`${basePath}games/${game.id}/`}>launch</a>
+      </li>
+    ))}
+  </ol>
+</section>

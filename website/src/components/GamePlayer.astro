@@ -1,0 +1,106 @@
+---
+interface GameEntry {
+  id: string
+  title: string
+  entry: string
+  width: number
+  height: number
+  luaSource: string
+  gameSource: string
+  runtimeGameSource: string
+  runtimeFiles: Array<{
+    path: string
+    source: string
+  }>
+}
+
+interface Props {
+  game: GameEntry
+  games: GameEntry[]
+}
+
+const { game, games } = Astro.props
+const basePath = import.meta.env.BASE_URL
+const luaSourceJson = JSON.stringify(game.luaSource).replace(/</g, '\\u003c')
+const gameConfigJson = JSON.stringify(game.runtimeGameSource).replace(/</g, '\\u003c')
+const runtimeFilesJson = JSON.stringify(game.runtimeFiles).replace(/</g, '\\u003c')
+---
+
+<section class="player-header">
+  <a class="back-link" href={basePath}>back to list</a>
+  <div>
+    <p class="eyebrow">Playable Example</p>
+    <h1 class="page-title">{game.title}</h1>
+    <p class="page-copy">{game.entry} · {game.width} x {game.height}</p>
+  </div>
+</section>
+
+<nav class="game-strip" aria-label="Game list">
+  {games.map(item => (
+    <a class:list={['game-pill', item.id === game.id && 'active']} href={`${basePath}games/${item.id}/`}>
+      {item.title}
+    </a>
+  ))}
+</nav>
+
+<section class="play-grid">
+  <div class="stage-panel">
+    <div class="panel-head">
+      <span>runtime</span>
+      <span>{game.width} x {game.height}</span>
+    </div>
+    <div class="stage-body">
+      <div class="play-stage" style={`--stage-width:${game.width}; --stage-height:${game.height};`}>
+        <div class="stage-host" id="soluna-stage-host"></div>
+        <div class="overlay" id="play-overlay">
+          <div class="overlay-card">
+            <div class="overlay-title">Preparing Runtime</div>
+            <p class="overlay-status" id="play-status">Loading game...</p>
+            <p class="overlay-note" id="play-note"></p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head">
+      <span>console</span>
+      <span>stdout / stderr</span>
+    </div>
+    <pre class="console-body" id="console-output"></pre>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head">
+      <span>{game.id}.game</span>
+      <span>launch config</span>
+    </div>
+    <pre class="code-block"><code>{game.gameSource}</code></pre>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head">
+      <span>{game.id}.lua</span>
+      <span>source</span>
+    </div>
+    <pre class="code-block"><code id="code-content">{game.luaSource}</code></pre>
+  </div>
+</section>
+
+<script type="application/json" id="soluna-example-source" set:html={luaSourceJson}></script>
+<script type="application/json" id="soluna-game-config" set:html={gameConfigJson}></script>
+<script type="application/json" id="soluna-runtime-files" set:html={runtimeFilesJson}></script>
+<script>
+import initPlay from '../client/play'
+
+const sourceNode = document.querySelector('#soluna-example-source')
+const gameConfigNode = document.querySelector('#soluna-game-config')
+const runtimeFilesNode = document.querySelector('#soluna-runtime-files')
+
+const exampleSource = sourceNode ? JSON.parse(sourceNode.textContent ?? '""') : ''
+const gameConfig = gameConfigNode ? JSON.parse(gameConfigNode.textContent ?? '""') : ''
+const runtimeFiles = runtimeFilesNode ? JSON.parse(runtimeFilesNode.textContent ?? '[]') : []
+
+initPlay({ exampleSource, gameConfig, runtimeFiles })
+</script>

@@ -1,0 +1,397 @@
+:root {
+  --paper: #ece4d6;
+  --paper-strong: #f6f0e4;
+  --ink: #211c17;
+  --muted: #6a5d4c;
+  --line: #9f917a;
+  --accent: #284237;
+  --accent-soft: rgba(40, 66, 55, 0.12);
+  --signal: #7b3b20;
+  --screen: #131611;
+  --screen-glow: #a3c28c;
+  --panel-shadow: 0 18px 40px rgba(43, 32, 17, 0.12);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.18), transparent 28%),
+    repeating-linear-gradient(0deg, rgba(74, 56, 41, 0.04), rgba(74, 56, 41, 0.04) 1px, transparent 1px, transparent 5px),
+    var(--paper);
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  color: var(--ink);
+  background: transparent;
+  font-family: "IBM Plex Mono", "SFMono-Regular", "Menlo", "Monaco", "Courier New", monospace;
+  line-height: 1.5;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+a:hover,
+a:focus-visible {
+  color: var(--accent);
+}
+
+code,
+pre {
+  font-family: "IBM Plex Mono", "SFMono-Regular", "Menlo", "Monaco", "Courier New", monospace;
+}
+
+.page-shell {
+  padding: 32px 20px 56px;
+}
+
+.page-main {
+  width: min(1100px, 100%);
+  margin: 0 auto;
+}
+
+.hero-panel,
+.directory-panel,
+.stage-panel,
+.panel {
+  border: 1px solid var(--line);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.24), rgba(255, 255, 255, 0.08)), var(--paper-strong);
+  box-shadow: var(--panel-shadow);
+}
+
+.hero-panel,
+.directory-panel,
+.panel,
+.stage-panel {
+  animation: rise-in 420ms ease both;
+}
+
+.hero-panel {
+  padding: 28px 28px 24px;
+}
+
+.eyebrow {
+  margin: 0 0 12px;
+  color: var(--signal);
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  font-size: 0.76rem;
+}
+
+.page-title {
+  margin: 0;
+  font-family: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", "URW Palladio L", serif;
+  font-size: clamp(2.5rem, 6vw, 4.6rem);
+  line-height: 0.95;
+  font-weight: 700;
+}
+
+.page-copy {
+  margin: 18px 0 0;
+  max-width: 42rem;
+  color: var(--muted);
+  font-size: 0.98rem;
+}
+
+.hero-ledger {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 22px;
+  padding-top: 14px;
+  border-top: 1px dashed var(--line);
+  color: var(--muted);
+  font-size: 0.86rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.directory-panel {
+  margin-top: 18px;
+  overflow: hidden;
+}
+
+.directory-head,
+.directory-item {
+  display: grid;
+  grid-template-columns: 72px minmax(0, 1fr) 140px 110px;
+  gap: 16px;
+  align-items: center;
+}
+
+.directory-head {
+  padding: 14px 24px;
+  color: var(--muted);
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  border-bottom: 1px solid var(--line);
+  background: rgba(31, 28, 23, 0.035);
+}
+
+.directory-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.directory-item {
+  padding: 18px 24px;
+  border-bottom: 1px dotted rgba(159, 145, 122, 0.7);
+}
+
+.directory-item:last-child {
+  border-bottom: none;
+}
+
+.directory-index,
+.directory-size,
+.directory-action,
+.directory-subtitle,
+.panel-head,
+.back-link {
+  font-size: 0.84rem;
+  letter-spacing: 0.04em;
+}
+
+.directory-index,
+.directory-size,
+.directory-subtitle {
+  color: var(--muted);
+}
+
+.directory-main {
+  min-width: 0;
+}
+
+.directory-link {
+  font-family: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", "URW Palladio L", serif;
+  font-size: 1.6rem;
+}
+
+.directory-subtitle {
+  margin: 6px 0 0;
+}
+
+.directory-action,
+.back-link,
+.game-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 36px;
+  padding: 0 14px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.22);
+  text-transform: lowercase;
+}
+
+.directory-action:hover,
+.back-link:hover,
+.game-pill:hover,
+.game-pill.active {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+}
+
+.player-header {
+  display: grid;
+  gap: 18px;
+  margin-bottom: 18px;
+}
+
+.back-link {
+  justify-self: start;
+}
+
+.game-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 18px;
+}
+
+.game-pill.active {
+  color: var(--accent);
+}
+
+.play-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.7fr) minmax(280px, 0.9fr);
+  gap: 18px;
+}
+
+.stage-panel {
+  grid-row: span 2;
+  overflow: hidden;
+}
+
+.panel,
+.stage-panel {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--line);
+  color: var(--muted);
+  text-transform: uppercase;
+}
+
+.stage-body {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  min-height: 0;
+  background:
+    radial-gradient(circle at top, rgba(163, 194, 140, 0.12), transparent 42%),
+    repeating-linear-gradient(180deg, rgba(163, 194, 140, 0.06), rgba(163, 194, 140, 0.06) 1px, transparent 1px, transparent 4px),
+    var(--screen);
+}
+
+.play-stage {
+  position: relative;
+  width: 100%;
+  aspect-ratio: var(--stage-width) / var(--stage-height);
+  border: 1px solid rgba(163, 194, 140, 0.24);
+  background:
+    radial-gradient(circle at top, rgba(163, 194, 140, 0.12), transparent 42%),
+    repeating-linear-gradient(180deg, rgba(163, 194, 140, 0.06), rgba(163, 194, 140, 0.06) 1px, transparent 1px, transparent 4px),
+    var(--screen);
+  overflow: hidden;
+}
+
+.stage-host,
+.stage-host canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: rgba(10, 12, 10, 0.52);
+}
+
+.overlay.hidden {
+  display: none;
+}
+
+.overlay-card {
+  width: min(320px, 100%);
+  padding: 18px 20px;
+  border: 1px solid rgba(163, 194, 140, 0.28);
+  background: rgba(21, 26, 20, 0.92);
+  color: var(--screen-glow);
+}
+
+.overlay-title {
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  font-size: 0.78rem;
+}
+
+.overlay-status,
+.overlay-note {
+  margin: 12px 0 0;
+  font-size: 0.9rem;
+}
+
+.console-body,
+.code-block {
+  margin: 0;
+  padding: 16px;
+  flex: 1;
+  min-height: 220px;
+  max-height: 420px;
+  overflow: auto;
+  background: rgba(255, 255, 255, 0.16);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.console-body {
+  background: #10150f;
+  color: var(--screen-glow);
+}
+
+.console-body .is-error {
+  color: #e8a783;
+}
+
+@media (max-width: 920px) {
+  .play-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .stage-panel {
+    grid-row: auto;
+  }
+}
+
+@media (max-width: 720px) {
+  .page-shell {
+    padding-inline: 14px;
+  }
+
+  .hero-panel,
+  .directory-head,
+  .directory-item,
+  .panel-head,
+  .console-body,
+  .code-block {
+    padding-left: 14px;
+    padding-right: 14px;
+  }
+
+  .directory-head {
+    display: none;
+  }
+
+  .directory-item {
+    grid-template-columns: 56px minmax(0, 1fr);
+  }
+
+  .directory-size {
+    grid-column: 2;
+  }
+
+  .directory-action {
+    grid-column: 2;
+    justify-self: start;
+  }
+
+  .play-stage {
+    width: 100%;
+  }
+}
+
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

@@ -1,0 +1,23 @@
+---
+import GamePlayer from '../../components/GamePlayer.astro'
+import BaseLayout from '../../layouts/BaseLayout.astro'
+import { loadGames } from '../../lib/games'
+
+const games = await loadGames()
+
+export async function getStaticPaths() {
+  const entries = await loadGames()
+  return entries.map(game => ({
+    params: { id: game.id },
+    props: {
+      game,
+    },
+  }))
+}
+
+const { game } = Astro.props
+---
+
+<BaseLayout title={`${game.title} | Soluna Examples`} description={`Play ${game.title} in the browser.`}>
+  <GamePlayer game={game} games={games} />
+</BaseLayout>
