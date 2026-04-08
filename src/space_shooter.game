@@ -1,0 +1,5 @@
+entry : space_shooter.lua
+width : 480
+height : 640
+window_title : "Space Shooter"
+background : 0xff000000

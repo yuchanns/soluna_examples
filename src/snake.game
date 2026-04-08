@@ -1,0 +1,5 @@
+entry : snake.lua
+width : 600
+height : 480
+window_title : Snake
+background : 0xff000000

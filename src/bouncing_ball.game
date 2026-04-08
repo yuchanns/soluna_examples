@@ -1,0 +1,5 @@
+entry : bouncing_ball.lua
+width : 640
+height : 480
+window_title : "Bouncing Ball"
+background : 0xff000000
