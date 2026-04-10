@@ -1,0 +1,5 @@
+entry : pacman.lua
+width : 800
+height : 620
+window_title : "PacMan"
+background : 0xff000000
