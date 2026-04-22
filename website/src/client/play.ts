@@ -1,10 +1,15 @@
 import { strToU8, zipSync } from 'fflate'
+import { initPersistentStorage } from './storage'
 
 interface RuntimeModule {
   FS: {
+    mkdir: (path: string) => void
+    mount: (type: unknown, options: Record<string, unknown>, mountpoint: string) => void
+    syncfs: (populate: boolean, callback: (error: unknown) => void) => void
     writeFile: (path: string, data: Uint8Array, options?: { canOwn?: boolean }) => void
   }
   FS_createPath: (root: string, path: string, canRead: boolean, canWrite: boolean) => void
+  IDBFS?: unknown
   _soluna_runtime_quit?: () => void
 }
 
@@ -15,6 +20,7 @@ interface PlayAppOptions {
   print: (text: string) => void
   printErr: (text: string) => void
   onAbort: (reason: unknown) => void
+  onBeforeRun?: (runtimeModule: RuntimeModule) => void
 }
 
 interface StartOptions {
@@ -142,6 +148,7 @@ async function createRuntimeHandle(
     },
     preRun: [
       (runtimeModule: RuntimeModule) => {
+        playOptions.onBeforeRun?.(runtimeModule)
         installRuntimeFiles(runtimeModule, startOptions.files)
       },
     ],
@@ -325,6 +332,10 @@ async function startRuntime(
       onAbort(reason) {
         setStatus('Runtime aborted.')
         setNote(String(reason || 'Unknown error'))
+      },
+      onBeforeRun(runtimeModule) {
+        setStatus('Preparing local save storage...')
+        initPersistentStorage(runtimeModule)
       },
     },
     {
