@@ -1,0 +1,6 @@
+entry : geometry_wars.lua
+width : 800
+height : 600
+window_title : "Geometry Wars"
+background : 0xff000000
+high_dpi : true

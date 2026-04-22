@@ -37,6 +37,7 @@ Other examples:
 "$SOLUNA_BIN" src/breakout.game
 "$SOLUNA_BIN" src/snake.game
 "$SOLUNA_BIN" src/space_shooter.game
+"$SOLUNA_BIN" src/geometry_wars.game
 ```
 
 On Linux, the built binary is usually at `soluna/bin/linux/release/soluna`.
@@ -63,3 +64,7 @@ Default local URL:
 
 <http://127.0.0.1:4321/>
 
+## Credits
+
+The `Geometry Wars` example is adapted from the original implementation in
+[skywind3000/GameSample](https://github.com/skywind3000/GameSample).
