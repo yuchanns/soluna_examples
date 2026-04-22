@@ -4,9 +4,10 @@ import '../styles/theme.css'
 interface Props {
   title: string
   description?: string
+  mainClass?: string
 }
 
-const { title, description = '' } = Astro.props
+const { title, description = '', mainClass = '' } = Astro.props
 ---
 
 <!doctype html>
@@ -19,7 +20,7 @@ const { title, description = '' } = Astro.props
   </head>
   <body>
     <div class="page-shell">
-      <main class="page-main">
+      <main class:list={['page-main', mainClass]}>
         <slot />
       </main>
     </div>
