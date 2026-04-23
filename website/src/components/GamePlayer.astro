@@ -12,6 +12,7 @@ interface GameEntry {
     path: string
     source: string
   }>
+  assetArchivePath?: string | null
 }
 
 interface Props {
@@ -24,6 +25,7 @@ const basePath = import.meta.env.BASE_URL
 const luaSourceJson = JSON.stringify(game.luaSource).replace(/</g, '\\u003c')
 const gameConfigJson = JSON.stringify(game.runtimeGameSource).replace(/</g, '\\u003c')
 const runtimeFilesJson = JSON.stringify(game.runtimeFiles).replace(/</g, '\\u003c')
+const assetArchivePathJson = JSON.stringify(game.assetArchivePath ?? null).replace(/</g, '\\u003c')
 ---
 
 <section class="player-header">
@@ -91,16 +93,19 @@ const runtimeFilesJson = JSON.stringify(game.runtimeFiles).replace(/</g, '\\u003
 <script type="application/json" id="soluna-example-source" set:html={luaSourceJson}></script>
 <script type="application/json" id="soluna-game-config" set:html={gameConfigJson}></script>
 <script type="application/json" id="soluna-runtime-files" set:html={runtimeFilesJson}></script>
+<script type="application/json" id="soluna-asset-archive" set:html={assetArchivePathJson}></script>
 <script>
 import initPlay from '../client/play'
 
 const sourceNode = document.querySelector('#soluna-example-source')
 const gameConfigNode = document.querySelector('#soluna-game-config')
 const runtimeFilesNode = document.querySelector('#soluna-runtime-files')
+const assetArchiveNode = document.querySelector('#soluna-asset-archive')
 
 const exampleSource = sourceNode ? JSON.parse(sourceNode.textContent ?? '""') : ''
 const gameConfig = gameConfigNode ? JSON.parse(gameConfigNode.textContent ?? '""') : ''
 const runtimeFiles = runtimeFilesNode ? JSON.parse(runtimeFilesNode.textContent ?? '[]') : []
+const assetArchivePath = assetArchiveNode ? JSON.parse(assetArchiveNode.textContent ?? 'null') : null
 
-initPlay({ exampleSource, gameConfig, runtimeFiles })
+initPlay({ exampleSource, gameConfig, runtimeFiles, assetArchivePath })
 </script>

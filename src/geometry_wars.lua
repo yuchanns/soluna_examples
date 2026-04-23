@@ -10,6 +10,8 @@ local util = require "utils"
 
 math.randomseed(os.time())
 
+soluna.load_sounds "asset/geometry_wars/sounds.dl"
+
 local args = ...
 local batch = assert(args.batch)
 
@@ -854,6 +856,20 @@ local state = {
 	---@type any[]
 	leaderboard = {},
 }
+local audio = {
+	music_voice = nil,
+	death_sound_played = false,
+	shoot = { "shoot_01", "shoot_02", "shoot_03", "shoot_04" },
+	explosion = {
+		"explosion_01", "explosion_02", "explosion_03", "explosion_04",
+		"explosion_05", "explosion_06", "explosion_07", "explosion_08",
+	},
+	spawn = { "spawn_01", "spawn_02", "spawn_03", "spawn_04", "spawn_05", "spawn_06", "spawn_07", "spawn_08" },
+	rise = { "rise_01", "rise_02", "rise_03", "rise_04", "rise_05", "rise_06", "rise_07" },
+	powerup = "powerup_01",
+	death = "explosion_01",
+	game_over = "explosion_02",
+}
 local trail_x = {}
 local trail_y = {}
 local trail_a = {}
@@ -1101,12 +1117,56 @@ local function enemy_color(enemy_type)
 	return def and def.color or COLOR_WHITE
 end
 
+local function stop_music(fade_seconds)
+	local voice = audio.music_voice
+	audio.music_voice = nil
+	if voice == nil then
+		return
+	end
+	voice:stop(fade_seconds)
+end
+
+local function ensure_music_playing()
+	local voice = audio.music_voice
+	if voice ~= nil and voice:playing() then
+		return
+	end
+	local started, err = soluna.play_sound "music1"
+	if started == nil then
+		error(err or "failed to start Geometry Wars music")
+	end
+	audio.music_voice = started
+end
+
+local function play_effect(name, opts)
+	local voice, err = soluna.play_sound(name, opts)
+	if voice == nil then
+		error(err or ("failed to play sound " .. tostring(name)))
+	end
+	return voice
+end
+
+local function play_random_effect(list, opts)
+	return play_effect(list[math.random(1, #list)], opts)
+end
+
 function state.sync_scene(next_scene)
 	if state.scene ~= next_scene then
+		local previous_scene = state.scene
 		state.scene = next_scene
 		state.scene_time = 0.0
 		input.ui_active_button = false
 		input.clear_ui_actions()
+		if next_scene == "death" then
+			audio.death_sound_played = false
+		elseif next_scene == "over" then
+			play_effect(audio.game_over)
+		end
+		if next_scene == "combat" then
+			ensure_music_playing()
+		elseif previous_scene == "combat" then
+			stop_music()
+		end
 	end
 end
 
@@ -1397,9 +1457,10 @@ local function spawn_enemy(enemy_type, x, y)
 				enemy.vy = math.sin(angle) * enemy.speed
 				enemy.angle = angle
 			end
-			return
+			return true
 		end
 	end
+	return false
 end
 
 local function spawn_from_edge(enemy_type)
@@ -1424,10 +1485,10 @@ local function spawn_from_edge(enemy_type)
 		x = clamp(x, -margin, MAP_W + margin)
 		y = clamp(y, -margin, MAP_H + margin)
 		if distance(x, y, player.x, player.y) > 250.0 then
-			spawn_enemy(enemy_type, x, y)
-			return
+			return spawn_enemy(enemy_type, x, y)
 		end
 	end
+	return false
 end
 
 local function update_enemies(dt)
@@ -1575,6 +1636,7 @@ local function handle_player_hit(enemy_type)
 		spawn_explosion(player.x, player.y, COLOR_CYAN, 20)
 		grid_impulse(player.x, player.y, 200, 200)
 		shake(5, 10)
+		play_random_effect(audio.explosion, { volume = 0.25 })
 		player.x = MAP_W * 0.5
 		player.y = MAP_H * 0.5
 		player.angle = 0
@@ -1640,6 +1702,7 @@ local function update_collisions()
 						spawn_explosion(enemy.x, enemy.y, enemy_color(enemy.type), 25 + enemy.type * 10)
 						grid_impulse(enemy.x, enemy.y, 120, 50 + enemy.type * 20)
 						shake(1 + enemy.type // 2, 3 + enemy.type)
+						play_random_effect(audio.explosion, { volume = 0.25 })
 						feedback.spawn_float_text(enemy.x, enemy.y - 10.0, string.format("+%d", earned), COLOR_YELLOW)
 						powerup.try_enemy_drop(enemy.type, enemy.x, enemy.y)
 						if state.combo >= 5 and not state.combo5_shown then
@@ -1707,6 +1770,7 @@ local function update_collisions()
 						state.total_kills = state.total_kills + 1
 						spawn_explosion(enemy.x, enemy.y, enemy_color(enemy.type), 12)
 						grid_impulse(enemy.x, enemy.y, 60, 40)
+						play_random_effect(audio.explosion, { volume = 0.25 })
 						feedback.spawn_float_text(enemy.x, enemy.y - 10.0, string.format("+%d", earned),
 							argb(255, 255, 215, 0))
 						enemy.active = false
@@ -1920,6 +1984,7 @@ function powerup.activate_ability(ability_type)
 	powerup.shield_active = ability_type == 2
 	powerup.slow_active = ability_type == 3
 	powerup.shield_angle = 0.0
+	play_effect(audio.rise[ability_type + 1])
 	feedback.show_popup(def.popup, def.color, 3)
 	shake(3, 8)
 end
@@ -2077,6 +2142,7 @@ function powerup.try_collect()
 		if entry.active and distance(player.x, player.y, entry.x, entry.y) < entry.r + 12.0 then
 			if entry.type == 0 then
 				powerup.trigger_nuke()
+				play_effect(audio.powerup)
 			elseif entry.type == 1 then
 				powerup.activate_ability(entry.ability)
 			end
@@ -2243,8 +2309,9 @@ local function update_spawner(dt)
 				x = MAP_W + margin
 				y = math.random() * MAP_H
 			end
-			spawn_enemy(0, x, y)
-			powerup.jack_count = powerup.jack_count + 1
+			if spawn_enemy(0, x, y) then
+				powerup.jack_count = powerup.jack_count + 1
+			end
 		end
 		if powerup.jack_count >= powerup.jack_total then
 			powerup.jack_active = false
@@ -2309,7 +2376,9 @@ local function update_spawner(dt)
 				enemy_type = 4
 			end
 		end
-		spawn_from_edge(enemy_type)
+		if spawn_from_edge(enemy_type) and state.game_time > 3.0 and enemy_type ~= 0 then
+			play_random_effect(audio.spawn)
+		end
 	end
 
 	powerup.maybe_spawn(dt)
@@ -2615,6 +2684,7 @@ local function update_shooting(dt)
 		else
 			spawn_bullet(player.angle, powerup.homing_active)
 		end
+		play_random_effect(audio.shoot, { volume = 0.25 })
 	end
 end
 
@@ -3285,6 +3355,10 @@ do
 		update_timers(dt)
 		powerup.update(dt)
 		feedback.update(dt)
+		if not audio.death_sound_played and state.scene_time >= 0.5 and state.scene_time < 1.0 then
+			audio.death_sound_played = true
+			play_effect(audio.death)
+		end
 	end
 
 	local function update_game_over_scene(dt)

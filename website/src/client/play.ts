@@ -39,6 +39,7 @@ interface PlayOptions {
     path: string
     source: string
   }>
+  assetArchivePath?: string | null
 }
 
 interface RuntimeHandle {
@@ -290,16 +291,20 @@ async function loadRuntimeAssets(
   exampleSource: string,
   gameConfig: string,
   runtimeFiles: PlayOptions['runtimeFiles'],
+  assetArchivePath: PlayOptions['assetArchivePath'],
 ) {
   setStatus('Preparing assets...')
 
   setStatus('Preparing fonts...')
-  const fontEntries = {
-    'asset/font/arial.ttf': normalizeFileData(await fetchArrayBuffer(`${basePath}fonts/arial.ttf`)),
-  }
+  const [fontBuffer, assetZip] = await Promise.all([
+    fetchArrayBuffer(`${basePath}fonts/arial.ttf`),
+    assetArchivePath ? fetchArrayBuffer(`${basePath}${assetArchivePath}`) : Promise.resolve(null),
+  ])
 
   return {
-    fontZip: zipSync(fontEntries),
+    fontZip: zipSync({
+      'asset/font/arial.ttf': normalizeFileData(fontBuffer),
+    }),
     mainZip: zipSync({
       'main.lua': strToU8(exampleSource),
       'main.game': strToU8(gameConfig),
@@ -307,6 +312,7 @@ async function loadRuntimeAssets(
         runtimeFiles.map(file => [file.path, strToU8(file.source)]),
       ),
     }),
+    assetZip: assetZip ? normalizeFileData(assetZip) : null,
   }
 }
 
@@ -317,6 +323,18 @@ async function startRuntime(
   assets: Awaited<ReturnType<typeof loadRuntimeAssets>>,
 ) {
   setStatus('Starting Soluna app...')
+  const zipArchives = ['/data/main.zip']
+  const files: StartOptions['files'] = [
+    { path: '/data/main.zip', data: assets.mainZip, canOwn: true },
+  ]
+
+  if (assets.assetZip) {
+    zipArchives.push('/data/asset.zip')
+    files.push({ path: '/data/asset.zip', data: assets.assetZip, canOwn: true })
+  }
+
+  zipArchives.push('/data/font.zip')
+  files.push({ path: '/data/font.zip', data: assets.fontZip, canOwn: true })
 
   return createRuntimeHandle(
     {
@@ -340,12 +358,9 @@ async function startRuntime(
     },
     {
       arguments: [
-        'zipfile=/data/main.zip:/data/font.zip',
+        `zipfile=${zipArchives.join(':')}`,
       ],
-      files: [
-        { path: '/data/main.zip', data: assets.mainZip, canOwn: true },
-        { path: '/data/font.zip', data: assets.fontZip, canOwn: true },
-      ],
+      files,
     },
   )
 }
@@ -379,12 +394,21 @@ export default async function initPlay(options: PlayOptions): Promise<void> {
 
   let assets: Awaited<ReturnType<typeof loadRuntimeAssets>>
   try {
-    assets = await loadRuntimeAssets(basePath, options.exampleSource, options.gameConfig, options.runtimeFiles)
+    assets = await loadRuntimeAssets(
+      basePath,
+      options.exampleSource,
+      options.gameConfig,
+      options.runtimeFiles,
+      options.assetArchivePath,
+    )
   }
   catch (error) {
     const message = error instanceof Error ? error.message : String(error)
     if (message.includes('/fonts/')) {
       setStatus('Failed to load font assets.')
+    }
+    else if (options.assetArchivePath && message.includes(options.assetArchivePath)) {
+      setStatus('Failed to load bundled game assets.')
     }
     else {
       setStatus('Failed to prepare runtime assets.')

@@ -1,4 +1,4 @@
-import { readdir, readFile } from 'node:fs/promises'
+import { readdir, readFile, stat } from 'node:fs/promises'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -15,6 +15,7 @@ export interface GameEntry {
     path: string
     source: string
   }>
+  assetArchivePath?: string | null
 }
 
 const repoRoot = path.resolve(fileURLToPath(new URL('../../..', import.meta.url)))
@@ -99,6 +100,10 @@ function buildRuntimeGameSource(source: string): string {
   return `${normalized.join('\n').trimEnd()}\n`
 }
 
+function exists(filePath: string): Promise<boolean> {
+  return stat(filePath).then(() => true, () => false)
+}
+
 export async function loadGames(): Promise<GameEntry[]> {
   const sourceFiles = (await readdir(sourceDir))
     .sort((left, right) => left.localeCompare(right))
@@ -143,6 +148,7 @@ export async function loadGames(): Promise<GameEntry[]> {
           path: sharedName,
           source: sharedLuaSources.get(sharedName) || '',
         })),
+        assetArchivePath: await exists(path.join(sourceDir, 'asset', id)) ? `runtime/assets/${id}.zip` : null,
       }
     }),
   ).then(entries => entries.filter(entry => entry !== null))
