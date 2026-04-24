@@ -122,6 +122,7 @@ local function blend_argb(dst, src)
 end
 
 local build_sprite_assets
+local build_font_assets
 
 do
 	local function create_canvas(width, height)
@@ -521,8 +522,37 @@ do
 		end
 	end
 
-	build_sprite_assets = function()
-		local preload = {}
+	local function count_radius_sprites(first_radius, last_radius, step)
+		return (last_radius - first_radius) // step + 1
+	end
+
+	local function add_preloaded_sprite(bundle, name, content, width, height, offset_x, offset_y)
+		local filename = "@" .. name
+		soluna.preload {
+			filename = filename,
+			content = content,
+			w = width,
+			h = height,
+		}
+		bundle[#bundle + 1] = {
+			name = name,
+			filename = filename,
+			x = offset_x == nil and -0.5 or offset_x,
+			y = offset_y == nil and -0.5 or offset_y,
+		}
+	end
+
+	local function load_bitmap_font_sprites()
+		local bundle = {}
+		bitmapfont.register_bitmap_glyphs(function(name, content, width, height, offset_x, offset_y)
+			add_preloaded_sprite(bundle, name, content, width, height, offset_x, offset_y)
+		end)
+		local loaded = soluna.load_sprites(bundle)
+		bitmapfont.attach_bitmap_glyphs(loaded)
+		return loaded.font_glyphs
+	end
+
+	build_sprite_assets = function(progress)
 		local bundle = {}
 		local ring_ranges = {
 			{ 1,   64,  1 },
@@ -545,27 +575,38 @@ do
 			{ name = "exp_5", radius = 18, outer = COLOR_ORANGE, inner = COLOR_RED },
 		}
 
+		if progress then
+			local total = 0
+			total = total + 3
+			total = total + count_radius_sprites(1, 52, 1)
+			total = total + #shape_builders
+			total = total + 2
+			total = total + count_radius_sprites(12, 18, 1)
+			for _, range in ipairs(ring_ranges) do
+				total = total + count_radius_sprites(range[1], range[2], range[3])
+			end
+			total = total + 3
+			total = total + count_radius_sprites(1, 3, 1)
+			total = total + #explosion_defs
+			progress.done = 0
+			progress.total = total
+			progress.current = ""
+			progress.ready = false
+		end
+
 		local function add_sprite(name, content, width, height, offset_x, offset_y)
-			local filename = "@" .. name
-			preload[#preload + 1] = {
-				filename = filename,
-				content = content,
-				w = width,
-				h = height,
-			}
-			bundle[#bundle + 1] = {
-				name = name,
-				filename = filename,
-				x = offset_x == nil and -0.5 or offset_x,
-				y = offset_y == nil and -0.5 or offset_y,
-			}
+			add_preloaded_sprite(bundle, name, content, width, height, offset_x, offset_y)
+			if progress then
+				progress.done = progress.done + 1
+				progress.current = name
+				flow.sleep(0)
+			end
 		end
 
 		register_sprite(add_sprite, "player", build_player_sprite)
 		register_sprite(add_sprite, "player_core_mask", build_player_core_mask)
 		register_sprite(add_sprite, "player_outline_mask", build_player_outline_mask)
 		register_radius_sprites(add_sprite, "circle_mask_", build_circle_mask, 1, 52, 1)
-		bitmapfont.register_bitmap_glyphs(add_sprite)
 
 		for _, def in ipairs(shape_builders) do
 			register_sprite(add_sprite, def[1], def[2])
@@ -586,12 +627,9 @@ do
 			register_sprite(add_sprite, def.name, build_explosion_sprite, def.radius, def.outer, def.inner)
 		end
 
-		soluna.preload(preload)
-
 		local loaded = soluna.load_sprites(bundle)
 		loaded.circle_masks = {}
 		attach_radius_sprites(loaded, loaded.circle_masks, "circle_mask_", 1, 52, 1)
-		bitmapfont.attach_bitmap_glyphs(loaded)
 		loaded.ring_masks = {}
 		for _, range in ipairs(ring_ranges) do
 			attach_radius_sprites(loaded, loaded.ring_masks, "ring_mask_", range[1], range[2], range[3])
@@ -600,11 +638,24 @@ do
 
 		return loaded
 	end
+
+	build_font_assets = load_bitmap_font_sprites
 end
 
 soluna.set_window_title "Geometry Wars"
 
-local sprites = build_sprite_assets()
+local sprites
+local loading_sprites = {
+	font_glyphs = build_font_assets(),
+}
+local asset_progress = {
+	started = false,
+	ready = false,
+	done = 0,
+	total = 1,
+	current = "",
+	error = nil,
+}
 local quad = util.quad_cache(matquad)
 local view = util.fixed_view(args, W, H)
 local masked = util.cache(function(sprite)
@@ -612,6 +663,25 @@ local masked = util.cache(function(sprite)
 		return matmask.mask(sprite, color)
 	end)
 end)
+
+local function start_sprite_loading()
+	if asset_progress.started then
+		return
+	end
+	asset_progress.started = true
+	ltask.fork(function()
+		local ok, loaded = pcall(build_sprite_assets, asset_progress)
+		if ok then
+			sprites = loaded
+			sprites.font_glyphs = loading_sprites.font_glyphs
+			asset_progress.done = asset_progress.total
+			asset_progress.current = "ready"
+			asset_progress.ready = true
+		else
+			asset_progress.error = tostring(loaded)
+		end
+	end)
+end
 
 local MAP_W = 1200
 local MAP_H = 900
@@ -3378,6 +3448,44 @@ do
 		update_grid(dt)
 	end
 
+	local function draw_loading_overlay()
+		local ratio = 0.0
+		if asset_progress.total > 0 then
+			ratio = clamp(asset_progress.done / asset_progress.total, 0.0, 1.0)
+		end
+
+		local bar_w = 360
+		local bar_h = 10
+		local bar_x = (W - bar_w) // 2
+		local bar_y = H // 2 + 48
+		local fill_w = math.floor((bar_w - 4) * ratio + 0.5)
+		local pulse = math.floor((math.sin(state.total_time * 4.0) * 0.5 + 0.5) * 80 + 80)
+		local percent = math.floor(ratio * 100.0 + 0.5)
+		local current = asset_progress.current
+		if current == "" then
+			current = "initializing"
+		end
+
+		batch:add(quad { width = W, height = H, color = COLOR_BLACK }, 0, 0)
+		batch:add(quad { width = 220, height = 2, color = argb(pulse, 0, 255, 255) }, W // 2 - 110, H // 2 - 22)
+		batch:add(quad { width = 160, height = 2, color = argb(120, 255, 255, 255) }, W // 2 - 80, H // 2 - 8)
+		bitmapfont.draw_text(batch, masked, loading_sprites.font_glyphs, 0, H // 2 - 82, "GEOMETRY WARS", 16, COLOR_CYAN,
+			"CV", W, 20)
+		bitmapfont.draw_text(batch, masked, loading_sprites.font_glyphs, 0, H // 2 + 12, "LOADING SPRITES", 8,
+			COLOR_WHITE, "CV", W, 10)
+		bitmapfont.draw_text(batch, masked, loading_sprites.font_glyphs, 0, H // 2 + 26,
+			string.format("%3d%%  %s", percent, current), 8, argb(180, 180, 220, 255), "CV", W, 10)
+
+		batch:add(quad { width = bar_w, height = bar_h, color = argb(120, 20, 40, 60) }, bar_x, bar_y)
+		if fill_w > 0 then
+			batch:add(quad { width = fill_w, height = bar_h - 4, color = argb(220, 0, 255, 255) }, bar_x + 2, bar_y + 2)
+		end
+		batch:add(quad { width = bar_w, height = 1, color = COLOR_CYAN }, bar_x, bar_y)
+		batch:add(quad { width = bar_w, height = 1, color = COLOR_CYAN }, bar_x, bar_y + bar_h - 1)
+		batch:add(quad { width = 1, height = bar_h, color = COLOR_CYAN }, bar_x, bar_y)
+		batch:add(quad { width = 1, height = bar_h, color = COLOR_CYAN }, bar_x + bar_w - 1, bar_y)
+	end
+
 	local function draw_title_world()
 		draw_backdrop(false)
 	end
@@ -3449,6 +3557,22 @@ do
 
 	game.reset = reset
 
+	function game.loading()
+		state.set_scene_hooks(nil, draw_loading_overlay)
+		start_sprite_loading()
+		while true do
+			if asset_progress.error then
+				error(asset_progress.error)
+			end
+			if asset_progress.ready then
+				state.load_records()
+				reset()
+				return "title"
+			end
+			flow.sleep(0)
+		end
+	end
+
 	function game.title()
 		state.set_scene_hooks(draw_title_world, feedback.draw_title_scene)
 		while true do
@@ -3518,10 +3642,8 @@ do
 		end
 	end
 
-	state.load_records()
-	reset()
 	flow.load(game)
-	flow.enter "title"
+	flow.enter "loading"
 end
 
 local callback = {}
