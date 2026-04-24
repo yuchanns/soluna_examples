@@ -60,6 +60,44 @@ pre {
   width: min(1440px, 100%);
 }
 
+.site-footer {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  width: min(1100px, 100%);
+  margin: 18px auto 0;
+  color: var(--muted);
+  font-size: 0.82rem;
+  letter-spacing: 0.04em;
+}
+
+.page-main-play + .site-footer {
+  width: min(1440px, 100%);
+}
+
+.source-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.18);
+}
+
+.source-link:hover,
+.source-link:focus-visible {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.github-mark {
+  width: 18px;
+  height: 18px;
+  color: var(--signal);
+  flex: 0 0 auto;
+}
+
 .hero-panel,
 .directory-panel,
 .stage-panel,
