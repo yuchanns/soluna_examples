@@ -1,0 +1,71 @@
+--
+name : prelude
+filename : asset/pacman/sounds/prelude.wav
+group : music
+volume : 0.9
+pan : 0.0
+pitch : 1.0
+loop : false
+
+--
+name : weeooh
+filename : asset/pacman/sounds/weeooh.wav
+group : music
+volume : 1.2
+pan : 0.0
+pitch : 1.0
+loop : true
+
+--
+name : frightened
+filename : asset/pacman/sounds/frightened.wav
+group : music
+volume : 1.0
+pan : 0.0
+pitch : 1.0
+loop : false
+
+--
+name : dead
+filename : asset/pacman/sounds/dead.wav
+group : sound
+volume : 1.0
+pan : 0.0
+pitch : 1.0
+loop : false
+
+--
+name : eatdot1
+filename : asset/pacman/sounds/eatdot1.wav
+group : sound
+volume : 1.0
+pan : 0.0
+pitch : 1.0
+loop : false
+
+--
+name : eatdot2
+filename : asset/pacman/sounds/eatdot2.wav
+group : sound
+volume : 1.0
+pan : 0.0
+pitch : 1.0
+loop : false
+
+--
+name : eatghost
+filename : asset/pacman/sounds/eatghost.wav
+group : sound
+volume : 1.0
+pan : 0.0
+pitch : 1.0
+loop : false
+
+--
+name : eatfruit
+filename : asset/pacman/sounds/eatfruit.wav
+group : sound
+volume : 1.0
+pan : 0.0
+pitch : 1.0
+loop : false

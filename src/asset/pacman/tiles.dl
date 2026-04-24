@@ -1,0 +1,431 @@
+--
+name : tile_10_dot
+filename : tiles/tile_10_dot.png
+x : 0
+y : 0
+
+--
+name : tile_14_blank
+filename : tiles/tile_14_blank.png
+x : 0
+y : 0
+
+--
+name : tile_14_dot
+filename : tiles/tile_14_dot.png
+x : 0
+y : 0
+
+--
+name : tile_CF_dot
+filename : tiles/tile_CF_dot.png
+x : 0
+y : 0
+
+--
+name : tile_CF_ghost_score
+filename : tiles/tile_CF_ghost_score.png
+x : 0
+y : 0
+
+--
+name : tile_CF_white_border
+filename : tiles/tile_CF_white_border.png
+x : 0
+y : 0
+
+--
+name : tile_D0_dot
+filename : tiles/tile_D0_dot.png
+x : 0
+y : 0
+
+--
+name : tile_D0_white_border
+filename : tiles/tile_D0_white_border.png
+x : 0
+y : 0
+
+--
+name : tile_D1_dot
+filename : tiles/tile_D1_dot.png
+x : 0
+y : 0
+
+--
+name : tile_D1_white_border
+filename : tiles/tile_D1_white_border.png
+x : 0
+y : 0
+
+--
+name : tile_D2_dot
+filename : tiles/tile_D2_dot.png
+x : 0
+y : 0
+
+--
+name : tile_D2_white_border
+filename : tiles/tile_D2_white_border.png
+x : 0
+y : 0
+
+--
+name : tile_D3_dot
+filename : tiles/tile_D3_dot.png
+x : 0
+y : 0
+
+--
+name : tile_D3_white_border
+filename : tiles/tile_D3_white_border.png
+x : 0
+y : 0
+
+--
+name : tile_D4_dot
+filename : tiles/tile_D4_dot.png
+x : 0
+y : 0
+
+--
+name : tile_D4_white_border
+filename : tiles/tile_D4_white_border.png
+x : 0
+y : 0
+
+--
+name : tile_D5_dot
+filename : tiles/tile_D5_dot.png
+x : 0
+y : 0
+
+--
+name : tile_D5_white_border
+filename : tiles/tile_D5_white_border.png
+x : 0
+y : 0
+
+--
+name : tile_D6_dot
+filename : tiles/tile_D6_dot.png
+x : 0
+y : 0
+
+--
+name : tile_D6_white_border
+filename : tiles/tile_D6_white_border.png
+x : 0
+y : 0
+
+--
+name : tile_D7_dot
+filename : tiles/tile_D7_dot.png
+x : 0
+y : 0
+
+--
+name : tile_D7_white_border
+filename : tiles/tile_D7_white_border.png
+x : 0
+y : 0
+
+--
+name : tile_D8_dot
+filename : tiles/tile_D8_dot.png
+x : 0
+y : 0
+
+--
+name : tile_D8_white_border
+filename : tiles/tile_D8_white_border.png
+x : 0
+y : 0
+
+--
+name : tile_D9_dot
+filename : tiles/tile_D9_dot.png
+x : 0
+y : 0
+
+--
+name : tile_D9_white_border
+filename : tiles/tile_D9_white_border.png
+x : 0
+y : 0
+
+--
+name : tile_DB_dot
+filename : tiles/tile_DB_dot.png
+x : 0
+y : 0
+
+--
+name : tile_DB_white_border
+filename : tiles/tile_DB_white_border.png
+x : 0
+y : 0
+
+--
+name : tile_DC_dot
+filename : tiles/tile_DC_dot.png
+x : 0
+y : 0
+
+--
+name : tile_DC_white_border
+filename : tiles/tile_DC_white_border.png
+x : 0
+y : 0
+
+--
+name : tile_DD_dot
+filename : tiles/tile_DD_dot.png
+x : 0
+y : 0
+
+--
+name : tile_DD_white_border
+filename : tiles/tile_DD_white_border.png
+x : 0
+y : 0
+
+--
+name : tile_DF_dot
+filename : tiles/tile_DF_dot.png
+x : 0
+y : 0
+
+--
+name : tile_DF_white_border
+filename : tiles/tile_DF_white_border.png
+x : 0
+y : 0
+
+--
+name : tile_E5_dot
+filename : tiles/tile_E5_dot.png
+x : 0
+y : 0
+
+--
+name : tile_E5_white_border
+filename : tiles/tile_E5_white_border.png
+x : 0
+y : 0
+
+--
+name : tile_E6_dot
+filename : tiles/tile_E6_dot.png
+x : 0
+y : 0
+
+--
+name : tile_E6_white_border
+filename : tiles/tile_E6_white_border.png
+x : 0
+y : 0
+
+--
+name : tile_E7_dot
+filename : tiles/tile_E7_dot.png
+x : 0
+y : 0
+
+--
+name : tile_E7_white_border
+filename : tiles/tile_E7_white_border.png
+x : 0
+y : 0
+
+--
+name : tile_E8_dot
+filename : tiles/tile_E8_dot.png
+x : 0
+y : 0
+
+--
+name : tile_E8_white_border
+filename : tiles/tile_E8_white_border.png
+x : 0
+y : 0
+
+--
+name : tile_E9_dot
+filename : tiles/tile_E9_dot.png
+x : 0
+y : 0
+
+--
+name : tile_E9_white_border
+filename : tiles/tile_E9_white_border.png
+x : 0
+y : 0
+
+--
+name : tile_EA_dot
+filename : tiles/tile_EA_dot.png
+x : 0
+y : 0
+
+--
+name : tile_EA_white_border
+filename : tiles/tile_EA_white_border.png
+x : 0
+y : 0
+
+--
+name : tile_EB_dot
+filename : tiles/tile_EB_dot.png
+x : 0
+y : 0
+
+--
+name : tile_EB_white_border
+filename : tiles/tile_EB_white_border.png
+x : 0
+y : 0
+
+--
+name : tile_EC_dot
+filename : tiles/tile_EC_dot.png
+x : 0
+y : 0
+
+--
+name : tile_EC_white_border
+filename : tiles/tile_EC_white_border.png
+x : 0
+y : 0
+
+--
+name : tile_ED_dot
+filename : tiles/tile_ED_dot.png
+x : 0
+y : 0
+
+--
+name : tile_ED_white_border
+filename : tiles/tile_ED_white_border.png
+x : 0
+y : 0
+
+--
+name : tile_EE_dot
+filename : tiles/tile_EE_dot.png
+x : 0
+y : 0
+
+--
+name : tile_EE_white_border
+filename : tiles/tile_EE_white_border.png
+x : 0
+y : 0
+
+--
+name : tile_EF_dot
+filename : tiles/tile_EF_dot.png
+x : 0
+y : 0
+
+--
+name : tile_EF_white_border
+filename : tiles/tile_EF_white_border.png
+x : 0
+y : 0
+
+--
+name : tile_F0_dot
+filename : tiles/tile_F0_dot.png
+x : 0
+y : 0
+
+--
+name : tile_F0_white_border
+filename : tiles/tile_F0_white_border.png
+x : 0
+y : 0
+
+--
+name : tile_F1_dot
+filename : tiles/tile_F1_dot.png
+x : 0
+y : 0
+
+--
+name : tile_F1_white_border
+filename : tiles/tile_F1_white_border.png
+x : 0
+y : 0
+
+--
+name : tile_F2_dot
+filename : tiles/tile_F2_dot.png
+x : 0
+y : 0
+
+--
+name : tile_F2_white_border
+filename : tiles/tile_F2_white_border.png
+x : 0
+y : 0
+
+--
+name : tile_F3_dot
+filename : tiles/tile_F3_dot.png
+x : 0
+y : 0
+
+--
+name : tile_F3_white_border
+filename : tiles/tile_F3_white_border.png
+x : 0
+y : 0
+
+--
+name : tile_F4_dot
+filename : tiles/tile_F4_dot.png
+x : 0
+y : 0
+
+--
+name : tile_F4_white_border
+filename : tiles/tile_F4_white_border.png
+x : 0
+y : 0
+
+--
+name : tile_F5_dot
+filename : tiles/tile_F5_dot.png
+x : 0
+y : 0
+
+--
+name : tile_F5_white_border
+filename : tiles/tile_F5_white_border.png
+x : 0
+y : 0
+
+--
+name : tile_FA_dot
+filename : tiles/tile_FA_dot.png
+x : 0
+y : 0
+
+--
+name : tile_FA_white_border
+filename : tiles/tile_FA_white_border.png
+x : 0
+y : 0
+
+--
+name : tile_FB_dot
+filename : tiles/tile_FB_dot.png
+x : 0
+y : 0
+
+--
+name : tile_FB_white_border
+filename : tiles/tile_FB_white_border.png
+x : 0
+y : 0

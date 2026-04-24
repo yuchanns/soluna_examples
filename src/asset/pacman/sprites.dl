@@ -1,0 +1,431 @@
+--
+name : sprite_00_cherries
+filename : sprites/sprite_00_cherries.png
+x : 0
+y : 0
+
+--
+name : sprite_01_strawberry
+filename : sprites/sprite_01_strawberry.png
+x : 0
+y : 0
+
+--
+name : sprite_02_peach
+filename : sprites/sprite_02_peach.png
+x : 0
+y : 0
+
+--
+name : sprite_03_bell
+filename : sprites/sprite_03_bell.png
+x : 0
+y : 0
+
+--
+name : sprite_04_apple
+filename : sprites/sprite_04_apple.png
+x : 0
+y : 0
+
+--
+name : sprite_05_grapes
+filename : sprites/sprite_05_grapes.png
+x : 0
+y : 0
+
+--
+name : sprite_06_galaxian
+filename : sprites/sprite_06_galaxian.png
+x : 0
+y : 0
+
+--
+name : sprite_07_key
+filename : sprites/sprite_07_key.png
+x : 0
+y : 0
+
+--
+name : sprite_28_frightened
+filename : sprites/sprite_28_frightened.png
+x : 0
+y : 0
+
+--
+name : sprite_28_frightened_blink
+filename : sprites/sprite_28_frightened_blink.png
+x : 0
+y : 0
+
+--
+name : sprite_29_frightened
+filename : sprites/sprite_29_frightened.png
+x : 0
+y : 0
+
+--
+name : sprite_29_frightened_blink
+filename : sprites/sprite_29_frightened_blink.png
+x : 0
+y : 0
+
+--
+name : sprite_32_blinky
+filename : sprites/sprite_32_blinky.png
+x : 0
+y : 0
+
+--
+name : sprite_32_clyde
+filename : sprites/sprite_32_clyde.png
+x : 0
+y : 0
+
+--
+name : sprite_32_eyes
+filename : sprites/sprite_32_eyes.png
+x : 0
+y : 0
+
+--
+name : sprite_32_inky
+filename : sprites/sprite_32_inky.png
+x : 0
+y : 0
+
+--
+name : sprite_32_pinky
+filename : sprites/sprite_32_pinky.png
+x : 0
+y : 0
+
+--
+name : sprite_33_blinky
+filename : sprites/sprite_33_blinky.png
+x : 0
+y : 0
+
+--
+name : sprite_33_clyde
+filename : sprites/sprite_33_clyde.png
+x : 0
+y : 0
+
+--
+name : sprite_33_inky
+filename : sprites/sprite_33_inky.png
+x : 0
+y : 0
+
+--
+name : sprite_33_pinky
+filename : sprites/sprite_33_pinky.png
+x : 0
+y : 0
+
+--
+name : sprite_34_blinky
+filename : sprites/sprite_34_blinky.png
+x : 0
+y : 0
+
+--
+name : sprite_34_clyde
+filename : sprites/sprite_34_clyde.png
+x : 0
+y : 0
+
+--
+name : sprite_34_eyes
+filename : sprites/sprite_34_eyes.png
+x : 0
+y : 0
+
+--
+name : sprite_34_inky
+filename : sprites/sprite_34_inky.png
+x : 0
+y : 0
+
+--
+name : sprite_34_pinky
+filename : sprites/sprite_34_pinky.png
+x : 0
+y : 0
+
+--
+name : sprite_35_blinky
+filename : sprites/sprite_35_blinky.png
+x : 0
+y : 0
+
+--
+name : sprite_35_clyde
+filename : sprites/sprite_35_clyde.png
+x : 0
+y : 0
+
+--
+name : sprite_35_inky
+filename : sprites/sprite_35_inky.png
+x : 0
+y : 0
+
+--
+name : sprite_35_pinky
+filename : sprites/sprite_35_pinky.png
+x : 0
+y : 0
+
+--
+name : sprite_36_blinky
+filename : sprites/sprite_36_blinky.png
+x : 0
+y : 0
+
+--
+name : sprite_36_clyde
+filename : sprites/sprite_36_clyde.png
+x : 0
+y : 0
+
+--
+name : sprite_36_eyes
+filename : sprites/sprite_36_eyes.png
+x : 0
+y : 0
+
+--
+name : sprite_36_inky
+filename : sprites/sprite_36_inky.png
+x : 0
+y : 0
+
+--
+name : sprite_36_pinky
+filename : sprites/sprite_36_pinky.png
+x : 0
+y : 0
+
+--
+name : sprite_37_blinky
+filename : sprites/sprite_37_blinky.png
+x : 0
+y : 0
+
+--
+name : sprite_37_clyde
+filename : sprites/sprite_37_clyde.png
+x : 0
+y : 0
+
+--
+name : sprite_37_inky
+filename : sprites/sprite_37_inky.png
+x : 0
+y : 0
+
+--
+name : sprite_37_pinky
+filename : sprites/sprite_37_pinky.png
+x : 0
+y : 0
+
+--
+name : sprite_38_blinky
+filename : sprites/sprite_38_blinky.png
+x : 0
+y : 0
+
+--
+name : sprite_38_clyde
+filename : sprites/sprite_38_clyde.png
+x : 0
+y : 0
+
+--
+name : sprite_38_eyes
+filename : sprites/sprite_38_eyes.png
+x : 0
+y : 0
+
+--
+name : sprite_38_inky
+filename : sprites/sprite_38_inky.png
+x : 0
+y : 0
+
+--
+name : sprite_38_pinky
+filename : sprites/sprite_38_pinky.png
+x : 0
+y : 0
+
+--
+name : sprite_39_blinky
+filename : sprites/sprite_39_blinky.png
+x : 0
+y : 0
+
+--
+name : sprite_39_clyde
+filename : sprites/sprite_39_clyde.png
+x : 0
+y : 0
+
+--
+name : sprite_39_inky
+filename : sprites/sprite_39_inky.png
+x : 0
+y : 0
+
+--
+name : sprite_39_pinky
+filename : sprites/sprite_39_pinky.png
+x : 0
+y : 0
+
+--
+name : sprite_40_ghost_score
+filename : sprites/sprite_40_ghost_score.png
+x : 0
+y : 0
+
+--
+name : sprite_41_ghost_score
+filename : sprites/sprite_41_ghost_score.png
+x : 0
+y : 0
+
+--
+name : sprite_42_ghost_score
+filename : sprites/sprite_42_ghost_score.png
+x : 0
+y : 0
+
+--
+name : sprite_43_ghost_score
+filename : sprites/sprite_43_ghost_score.png
+x : 0
+y : 0
+
+--
+name : sprite_44_pacman
+filename : sprites/sprite_44_pacman.png
+x : 0
+y : 0
+
+--
+name : sprite_44_pacman_left
+filename : sprites/sprite_44_pacman_left.png
+x : 0
+y : 0
+
+--
+name : sprite_45_pacman
+filename : sprites/sprite_45_pacman.png
+x : 0
+y : 0
+
+--
+name : sprite_45_pacman_up
+filename : sprites/sprite_45_pacman_up.png
+x : 0
+y : 0
+
+--
+name : sprite_46_pacman
+filename : sprites/sprite_46_pacman.png
+x : 0
+y : 0
+
+--
+name : sprite_46_pacman_left
+filename : sprites/sprite_46_pacman_left.png
+x : 0
+y : 0
+
+--
+name : sprite_47_pacman
+filename : sprites/sprite_47_pacman.png
+x : 0
+y : 0
+
+--
+name : sprite_47_pacman_up
+filename : sprites/sprite_47_pacman_up.png
+x : 0
+y : 0
+
+--
+name : sprite_48_pacman
+filename : sprites/sprite_48_pacman.png
+x : 0
+y : 0
+
+--
+name : sprite_52_pacman
+filename : sprites/sprite_52_pacman.png
+x : 0
+y : 0
+
+--
+name : sprite_53_pacman
+filename : sprites/sprite_53_pacman.png
+x : 0
+y : 0
+
+--
+name : sprite_54_pacman
+filename : sprites/sprite_54_pacman.png
+x : 0
+y : 0
+
+--
+name : sprite_55_pacman
+filename : sprites/sprite_55_pacman.png
+x : 0
+y : 0
+
+--
+name : sprite_56_pacman
+filename : sprites/sprite_56_pacman.png
+x : 0
+y : 0
+
+--
+name : sprite_57_pacman
+filename : sprites/sprite_57_pacman.png
+x : 0
+y : 0
+
+--
+name : sprite_58_pacman
+filename : sprites/sprite_58_pacman.png
+x : 0
+y : 0
+
+--
+name : sprite_59_pacman
+filename : sprites/sprite_59_pacman.png
+x : 0
+y : 0
+
+--
+name : sprite_60_pacman
+filename : sprites/sprite_60_pacman.png
+x : 0
+y : 0
+
+--
+name : sprite_61_pacman
+filename : sprites/sprite_61_pacman.png
+x : 0
+y : 0
+
+--
+name : sprite_62_pacman
+filename : sprites/sprite_62_pacman.png
+x : 0
+y : 0
