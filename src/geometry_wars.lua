@@ -3,6 +3,7 @@ local app = require "soluna.app"
 local ltask = require "ltask"
 local matquad = require "soluna.material.quad"
 local matmask = require "soluna.material.mask"
+local matradial = require "ext.material.radial_shape"
 local bitmapfont = require "font"
 local flow = require "flow"
 local persist = require "persist"
@@ -323,33 +324,6 @@ do
 		end
 	end
 
-	local function add_soft_circle_glow(canvas, cx, cy, radius, color, spread, layers)
-		for i = layers, 1, -1 do
-			local t = i / layers
-			local r = radius + t * spread
-			local alpha = t * t * 0.35
-			fill_circle(canvas, cx, cy, r, scale_alpha(color, alpha))
-		end
-	end
-
-	local function build_circle_mask(radius)
-		local size = radius * 2 + 4
-		local canvas = create_canvas(size, size)
-		local cx = size // 2
-		local cy = size // 2
-		fill_circle(canvas, cx, cy, radius, COLOR_WHITE)
-		return canvas.to_content(), size, size
-	end
-
-	local function build_ring_mask(radius, thickness)
-		local size = radius * 2 + math.ceil(thickness) + 4
-		local canvas = create_canvas(size, size)
-		local cx = size // 2
-		local cy = size // 2
-		stroke_circle(canvas, cx, cy, radius, thickness, COLOR_WHITE)
-		return canvas.to_content(), size, size
-	end
-
 	local function player_triangle_points(cx, cy, scale)
 		local back = math.pi
 		return {
@@ -452,17 +426,6 @@ do
 		return canvas.to_content(), size, size
 	end
 
-	local function build_bullet_sprite(core_color, glow_color)
-		local size = 18
-		local canvas = create_canvas(size, size)
-		local cx = size // 2
-		local cy = size // 2
-		add_soft_circle_glow(canvas, cx, cy, 2.0, glow_color, 2, 2)
-		fill_circle(canvas, cx, cy, 3.0, glow_color)
-		fill_circle(canvas, cx, cy, 1.7, core_color)
-		return canvas.to_content(), size, size
-	end
-
 	local function build_powerup_shape(radius)
 		local size = radius * 2 + 4
 		local canvas = create_canvas(size, size)
@@ -486,26 +449,6 @@ do
 		return canvas.to_content(), size, size
 	end
 
-	local function build_star_mask_sprite(radius)
-		local size = radius * 2 + 3
-		local canvas = create_canvas(size, size)
-		local cx = size // 2
-		local cy = size // 2
-		fill_circle(canvas, cx, cy, radius, COLOR_WHITE)
-		return canvas.to_content(), size, size
-	end
-
-	local function build_explosion_sprite(radius, outer_color, inner_color)
-		local size = radius * 2 + 8
-		local canvas = create_canvas(size, size)
-		local cx = size // 2
-		local cy = size // 2
-		add_soft_circle_glow(canvas, cx, cy, radius - 1, outer_color, 3, 2)
-		fill_circle(canvas, cx, cy, radius, outer_color)
-		fill_circle(canvas, cx, cy, math.max(radius - 4, 1), inner_color)
-		return canvas.to_content(), size, size
-	end
-
 	local function register_sprite(add_sprite, name, builder, ...)
 		local content, width, height = builder(...)
 		add_sprite(name, content, width, height)
@@ -515,12 +458,6 @@ do
 		for radius = first_radius, last_radius, step do
 			local content, width, height = builder(radius, ...)
 			add_sprite(prefix .. radius, content, width, height)
-		end
-	end
-
-	local function attach_radius_sprites(loaded, target, prefix, first_radius, last_radius, step)
-		for radius = first_radius, last_radius, step do
-			target[radius] = loaded[prefix .. radius]
 		end
 	end
 
@@ -556,12 +493,6 @@ do
 
 	build_sprite_assets = function(progress)
 		local bundle = {}
-		local ring_ranges = {
-			{ 1,   64,  1 },
-			{ 68,  128, 4 },
-			{ 144, 256, 16 },
-			{ 288, 384, 32 },
-		}
 		local shape_builders = {
 			{ "swarm_shape",   build_swarm_shape },
 			{ "chaser_shape",  build_chaser_shape },
@@ -569,27 +500,13 @@ do
 			{ "orbiter_shape", build_orbiter_shape },
 			{ "weaver_shape",  build_weaver_shape },
 		}
-		local explosion_defs = {
-			{ name = "exp_1", radius = 6,  outer = COLOR_WHITE,  inner = COLOR_RED },
-			{ name = "exp_2", radius = 9,  outer = COLOR_WHITE,  inner = COLOR_RED },
-			{ name = "exp_3", radius = 12, outer = COLOR_YELLOW, inner = COLOR_RED },
-			{ name = "exp_4", radius = 15, outer = COLOR_ORANGE, inner = COLOR_RED },
-			{ name = "exp_5", radius = 18, outer = COLOR_ORANGE, inner = COLOR_RED },
-		}
 
 		if progress then
 			local total = 0
 			total = total + 3
-			total = total + count_radius_sprites(1, 52, 1)
 			total = total + #shape_builders
-			total = total + 2
 			total = total + count_radius_sprites(12, 18, 1)
-			for _, range in ipairs(ring_ranges) do
-				total = total + count_radius_sprites(range[1], range[2], range[3])
-			end
-			total = total + 3
-			total = total + count_radius_sprites(1, 3, 1)
-			total = total + #explosion_defs
+			total = total + 1
 			progress.done = 0
 			progress.total = total
 			progress.current = ""
@@ -608,35 +525,15 @@ do
 		register_sprite(add_sprite, "player", build_player_sprite)
 		register_sprite(add_sprite, "player_core_mask", build_player_core_mask)
 		register_sprite(add_sprite, "player_outline_mask", build_player_outline_mask)
-		register_radius_sprites(add_sprite, "circle_mask_", build_circle_mask, 1, 52, 1)
 
 		for _, def in ipairs(shape_builders) do
 			register_sprite(add_sprite, def[1], def[2])
 		end
 
-		register_sprite(add_sprite, "bullet", build_bullet_sprite, COLOR_WHITE, with_alpha(COLOR_CYAN, 140))
-		register_sprite(add_sprite, "bullet_homing", build_bullet_sprite, COLOR_WHITE, with_alpha(COLOR_BLUE, 170))
 		register_radius_sprites(add_sprite, "powerup_shape_", build_powerup_shape, 12, 18, 1)
-		for _, range in ipairs(ring_ranges) do
-			register_radius_sprites(add_sprite, "ring_mask_", build_ring_mask, range[1], range[2], range[3], 1.0)
-		end
-		register_sprite(add_sprite, "ring_mask_400", build_ring_mask, 400, 1.0)
-		register_sprite(add_sprite, "slow_ring_mask", build_ring_mask, 180.0, 1.0)
 		register_sprite(add_sprite, "black_hole", build_black_hole_sprite)
-		register_radius_sprites(add_sprite, "star_", build_star_mask_sprite, 1, 3, 1)
-
-		for _, def in ipairs(explosion_defs) do
-			register_sprite(add_sprite, def.name, build_explosion_sprite, def.radius, def.outer, def.inner)
-		end
 
 		local loaded = soluna.load_sprites(bundle)
-		loaded.circle_masks = {}
-		attach_radius_sprites(loaded, loaded.circle_masks, "circle_mask_", 1, 52, 1)
-		loaded.ring_masks = {}
-		for _, range in ipairs(ring_ranges) do
-			attach_radius_sprites(loaded, loaded.ring_masks, "ring_mask_", range[1], range[2], range[3])
-		end
-		loaded.ring_masks[400] = loaded.ring_mask_400
 
 		return loaded
 	end
@@ -663,6 +560,15 @@ local view = util.fixed_view(args, W, H)
 local masked = util.cache(function(sprite)
 	return util.cache(function(color)
 		return matmask.mask(sprite, color)
+	end)
+end)
+local radial_circle = util.cache(function(radius)
+	return util.cache(function(color)
+		return matradial.circle {
+			radius = radius,
+			color = color,
+			outer_softness = 0.75,
+		}
 	end)
 end)
 
@@ -1360,51 +1266,23 @@ local function shake(amount, frames)
 end
 
 local function draw_masked_circle(color, radius, x, y)
-	local sprite_radius = math.floor(radius)
-	if sprite_radius < 1 then
-		sprite_radius = 1
-	elseif sprite_radius > 52 then
-		sprite_radius = 52
-	end
-	local masks = assert(sprites.circle_masks)
-	batch:add(masked[masks[sprite_radius]][color], x, y)
-end
-
-local function cached_ring_radius(radius)
-	radius = math.floor(radius)
-	if radius < 1 then
-		return 1
-	end
-	if radius <= 64 then
-		return radius
-	end
-	if radius <= 128 then
-		radius = 68 + math.floor((radius - 68 + 2) / 4) * 4
-		return clamp(radius, 68, 128)
-	end
-	if radius <= 256 then
-		radius = 144 + math.floor((radius - 144 + 8) / 16) * 16
-		return clamp(radius, 144, 256)
-	end
-	radius = 288 + math.floor((radius - 288 + 16) / 32) * 32
-	return clamp(radius, 288, 400)
-end
-
-local function draw_masked_ring(color, radius, x, y)
-	local target_radius = math.floor(radius)
-	if target_radius < 1 then
+	if radius <= 0 then
 		return
 	end
-	local sprite_radius = cached_ring_radius(target_radius)
-	local masks = assert(sprites.ring_masks)
-	local sprite = masks[sprite_radius]
-	if target_radius == sprite_radius then
-		batch:add(masked[sprite][color], x, y)
+	batch:add(radial_circle[radius][color], x, y)
+end
+
+local function draw_masked_ring(color, radius, x, y, thickness, inner_softness, outer_softness)
+	if radius <= 0 then
 		return
 	end
-	batch:layer(target_radius / sprite_radius, x, y)
-	batch:add(masked[sprite][color])
-	batch:layer()
+	batch:add(matradial.ring {
+		radius = radius,
+		thickness = thickness or 1.5,
+		inner_softness = inner_softness or 0.75,
+		outer_softness = outer_softness or 0.75,
+		color = color,
+	}, x, y)
 end
 
 function feedback.spawn_float_text(x, y, text, color)
@@ -2239,15 +2117,15 @@ function powerup.draw()
 
 			if beacon_phase1 < 1.5 then
 				local expand = beacon_phase1 / 1.5
-				local ring_r = math.floor(entry.r + expand * 30.0)
+				local ring_r = entry.r + expand * 30.0
 				local ring_color = particle_alpha(core, 120.0 * (1.0 - expand))
-				draw_masked_ring(ring_color, ring_r, entry.x, entry.y)
+				draw_masked_ring(ring_color, ring_r, entry.x, entry.y, 2.0, 0.5, 1.25)
 			end
 			if beacon_phase2 < 1.5 then
 				local expand = beacon_phase2 / 1.5
-				local ring_r = math.floor(entry.r + expand * 30.0)
+				local ring_r = entry.r + expand * 30.0
 				local ring_color = particle_alpha(core, 120.0 * (1.0 - expand))
-				draw_masked_ring(ring_color, ring_r, entry.x, entry.y)
+				draw_masked_ring(ring_color, ring_r, entry.x, entry.y, 2.0, 0.5, 1.25)
 			end
 
 			draw_masked_circle(glow, pr * 2.0, entry.x, entry.y)
@@ -2280,11 +2158,12 @@ function powerup.draw_black_holes()
 				local wave_r = expand_progress * 400.0
 				local wave_alpha = 200.0 * (1.0 - expand_progress)
 				if wave_r > 0.01 then
-					draw_masked_ring(particle_alpha(argb(255, 160, 60, 220), wave_alpha), wave_r, bh.x, bh.y)
+					draw_masked_ring(particle_alpha(argb(255, 160, 60, 220), wave_alpha), wave_r, bh.x, bh.y, 3.0, 1.0,
+						2.0)
 				end
 				if wave_r > 0.02 then
 					draw_masked_ring(particle_alpha(argb(255, 220, 150, 255), wave_alpha * 0.5), wave_r * 0.5, bh.x, bh
-						.y)
+						.y, 2.0, 0.75, 1.5)
 				end
 			else
 				local pulse_scale = math.sin(bh.pulse) * 0.1 + 1.0
@@ -2293,7 +2172,7 @@ function powerup.draw_black_holes()
 				if core_r > 35.0 then
 					core_r = 35.0
 				end
-				draw_masked_ring(argb(40, 160, 60, 220), ring_r, bh.x, bh.y)
+				draw_masked_ring(argb(40, 160, 60, 220), ring_r, bh.x, bh.y, 2.0, 0.75, 1.5)
 				draw_masked_circle(argb(80, 160, 60, 220), core_r + 5.0, bh.x, bh.y)
 				batch:layer(core_r / 16.0, bh.x, bh.y)
 				batch:add(sprites.black_hole)
@@ -2313,10 +2192,10 @@ function powerup.draw_world_fx()
 		local outer = particle_alpha(COLOR_CYAN, powerup.nuke_wave_alpha * 200.0)
 		local inner = argb(quantize_byte(powerup.nuke_wave_alpha * 100.0, 16), 200, 255, 255)
 		if powerup.nuke_wave_radius > 0.01 then
-			draw_masked_ring(outer, powerup.nuke_wave_radius, player.x, player.y)
+			draw_masked_ring(outer, powerup.nuke_wave_radius, player.x, player.y, 3.0, 1.0, 2.0)
 		end
 		if powerup.nuke_wave_radius > 0.02 then
-			draw_masked_ring(inner, powerup.nuke_wave_radius * 0.85, player.x, player.y)
+			draw_masked_ring(inner, powerup.nuke_wave_radius * 0.85, player.x, player.y, 2.0, 0.75, 1.5)
 		end
 	end
 end
@@ -2499,8 +2378,8 @@ local function init_grid()
 			nodes[col + 1] = {
 				x = x,
 				y = y,
-				vx = 0,
-				vy = 0,
+				vx = x,
+				vy = y,
 			}
 		end
 	end
@@ -2967,7 +2846,7 @@ local function draw_stars(stars)
 		local star = stars[i]
 		if star.x >= camera.x - 8 and star.x <= camera.x + W + 8
 			and star.y >= camera.y - 8 and star.y <= camera.y + H + 8 then
-			batch:add(masked[sprites["star_" .. star.size]][star.color], star.x, star.y)
+			draw_masked_circle(star.color, star.size, star.x, star.y)
 		end
 	end
 end
@@ -3244,7 +3123,7 @@ local function draw_player()
 		player.y - math.sin(player.angle) * 12.0
 	)
 	if powerup.shield_active then
-		draw_masked_ring(argb(100, 255, 215, 0), 50.0, player.x, player.y)
+		draw_masked_ring(argb(100, 255, 215, 0), 50.0, player.x, player.y, 2.0, 0.75, 1.0)
 		for d = 0, 2 do
 			local dot_angle = powerup.shield_angle + d * (2.0 * math.pi / 3.0)
 			local dot_x = player.x + math.cos(dot_angle) * 50.0
@@ -3256,12 +3135,8 @@ local function draw_player()
 	if powerup.slow_active then
 		local slow_pulse = math.sin(state.total_time * 3.0) * 0.1 + 1.0
 		local slow_r = 180.0 * slow_pulse
-		batch:layer(slow_pulse, player.x, player.y)
-		batch:add(masked[sprites.slow_ring_mask][argb(60, 80, 180, 255)])
-		batch:layer()
-		batch:layer((slow_r - 5.0) / 180.0, player.x, player.y)
-		batch:add(masked[sprites.slow_ring_mask][argb(30, 120, 220, 255)])
-		batch:layer()
+		draw_masked_ring(argb(60, 80, 180, 255), slow_r, player.x, player.y, 2.5, 1.0, 2.0)
+		draw_masked_ring(argb(30, 120, 220, 255), slow_r - 5.0, player.x, player.y, 1.5, 0.75, 1.5)
 	end
 end
 

@@ -1,11 +1,9 @@
 local ltask = require "ltask"
-local soluna = require "soluna"
 local spritemgr = require "soluna.spritemgr"
-local matmask = require "soluna.material.mask"
+local matradial = require "ext.material.radial_shape"
 
-global require, assert, ipairs, math, string, table, type
+global require, ipairs, math, table, type
 
-local MASK_SIZE <const> = 32
 local MAX_PARTICLES <const> = 800
 local DEFAULT_DT <const> = 1.0 / 60.0
 local DRAG <const> = 4.0
@@ -19,10 +17,8 @@ local batches = {
 	spritemgr.newbatch(),
 }
 local particles = {}
-local masks = {}
 local render
 local batch_id
-local circle
 local current_batch
 local current_index = 1
 local active_n = 0
@@ -117,52 +113,15 @@ local function sample_color(emitter)
 	)
 end
 
-local function build_circle_mask()
-	local pixels = {}
-	local radius = MASK_SIZE * 0.5 - 1
-	local radius_sq = radius * radius
-	local cx = MASK_SIZE * 0.5
-	local cy = MASK_SIZE * 0.5
-
-	for y = 0, MASK_SIZE - 1 do
-		for x = 0, MASK_SIZE - 1 do
-			local dx = x + 0.5 - cx
-			local dy = y + 0.5 - cy
-			local alpha = dx * dx + dy * dy <= radius_sq and 255 or 0
-			pixels[#pixels + 1] = string.pack("BBBB", 255, 255, 255, alpha)
-		end
-	end
-
-	soluna.preload {
-		filename = "@particle_emitter_circle",
-		content = table.concat(pixels),
-		w = MASK_SIZE,
-		h = MASK_SIZE,
-	}
-
-	return assert(soluna.load_sprites {
-		{
-			name = "circle",
-			filename = "@particle_emitter_circle",
-			x = -0.5,
-			y = -0.5,
-		},
-	}.circle)
-end
-
-local function masked(color)
-	local m = masks[color]
-	if m == nil then
-		m = matmask.mask(circle, color)
-		masks[color] = m
-	end
-	return m
-end
-
 local function draw_masked_circle(batch, color, radius, x, y)
-	batch:layer(radius * 2.0 / MASK_SIZE, x, y)
-	batch:add(masked(color))
-	batch:layer()
+	if radius <= 0 then
+		return
+	end
+	batch:add(matradial.circle {
+		radius = radius,
+		color = color,
+		outer_softness = 0.75,
+	}, x, y)
 end
 
 local function spawn_particle(x, y, vx, vy, color, life, size)
@@ -299,7 +258,6 @@ function S.init()
 	batch_id = ltask.call(render, "register_batch", ltask.self())
 	local _, now = ltask.now()
 	math.randomseed(now + 0x6765)
-	circle = build_circle_mask()
 	current_batch = batches[current_index]
 	current_batch:reset()
 
