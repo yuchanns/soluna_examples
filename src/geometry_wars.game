@@ -1,4 +1,5 @@
 entry : geometry_wars.lua
+service_path : "./?.lua;service/?.lua"
 width : 800
 height : 600
 window_title : "Geometry Wars"

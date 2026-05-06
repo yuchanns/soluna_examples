@@ -14,6 +14,8 @@ soluna.load_sounds "asset/geometry_wars/sounds.dl"
 
 local args = ...
 local batch = assert(args.batch)
+local particle = ltask.spawn "geometry_wars/particle"
+local init
 
 local W = 800
 local H = 600
@@ -683,6 +685,17 @@ local function start_sprite_loading()
 	end)
 end
 
+local function clear_particles()
+	ltask.send(particle, "clear")
+end
+
+do
+	function init()
+		ltask.call(particle, "init")
+		init = nil
+	end
+end
+
 local MAP_W = 1200
 local MAP_H = 900
 local PLAYER_SPEED = 250.0
@@ -694,7 +707,6 @@ local MAX_STARS_FAR = 50
 local MAX_STARS_NEAR = 30
 local MAX_BULLETS = 150
 local MAX_ENEMIES = 100
-local MAX_PARTICLES = 800
 local MAX_FLOAT_TEXTS = 30
 local MAX_TICKER = 4
 local MAX_POWERUPS = 5
@@ -720,8 +732,11 @@ local PLAYER_CORE = argb(240, 0, 255, 255)
 local PLAYER_OUTLINE = argb(160, 100, 255, 255)
 local PLAYER_TRAIL = argb(100, 0, 200, 255)
 local ENGINE_GLOW = argb(150, 255, 180, 60)
-local PARTICLE_GLOW_ALPHA = 80
-local PARTICLE_CORE_ALPHA = 120
+local BULLET_SPARK_SPREAD = 100.0 * math.pi / 180.0
+local ATTRACT_SPARK_SPREAD = 60.0 * math.pi / 180.0
+local THRUST_SPREAD = 60.0 * math.pi / 180.0
+local THRUST_NORMAL_COLOR_RANGE = { r = { 150, 254 }, g = { 220, 255 }, b = { 200, 254 }, step = 16 }
+local THRUST_ENERGY_COLOR_RANGE = { r = 255, g = 240, b = { 200, 254 }, step = 16 }
 
 local ENEMY_DEFS = {
 	[0] = {
@@ -966,8 +981,6 @@ local grid = {}
 local bullets = {}
 ---@type any[]
 local enemies = {}
----@type any[]
-local particles = {}
 local feedback = {
 	---@type any[]
 	float_texts = {},
@@ -1165,10 +1178,6 @@ end
 local function quantize_byte(value, step)
 	local q = math.floor((value + step * 0.5) / step) * step
 	return clamp(q, 0, 255)
-end
-
-local function particle_color(r, g, b)
-	return argb(255, quantize_byte(r, 16), quantize_byte(g, 16), quantize_byte(b, 16))
 end
 
 local function particle_alpha(color, alpha)
@@ -1448,23 +1457,6 @@ function feedback.ticker_add(text, color)
 	msg.active = true
 end
 
-local function spawn_particle(x, y, vx, vy, color, life, size)
-	for i = 1, MAX_PARTICLES do
-		local particle = particles[i]
-		if particle.life <= 0 then
-			particle.x = x
-			particle.y = y
-			particle.vx = vx
-			particle.vy = vy
-			particle.color = color
-			particle.life = life
-			particle.max_life = life
-			particle.size = size
-			return
-		end
-	end
-end
-
 local function spawn_bullet(angle, homing)
 	for i = 1, MAX_BULLETS do
 		local bullet = bullets[i]
@@ -1480,20 +1472,24 @@ local function spawn_bullet(angle, homing)
 	end
 end
 
+local function emit_particles(emitter)
+	ltask.send(particle, "emit", emitter)
+end
+
 local function spawn_explosion(x, y, color, count)
-	for i = 0, count - 1 do
-		local angle = (i * 2.0 * math.pi) / count
-		local speed = 80.0 + math.random() * 280.0
-		spawn_particle(
-			x,
-			y,
-			math.cos(angle) * speed,
-			math.sin(angle) * speed,
-			color,
-			0.4 + math.random() * 0.8,
-			3.0 + math.random(0, 3)
-		)
-	end
+	emit_particles {
+		x = x,
+		y = y,
+		count = count,
+		color = color,
+		radial = true,
+		speed_min = 80.0,
+		speed_max = 360.0,
+		life_min = 0.4,
+		life_max = 1.2,
+		size_min = 3.0,
+		size_max = 6.0,
+	}
 end
 
 local function spawn_enemy(enemy_type, x, y)
@@ -1742,19 +1738,20 @@ local function update_collisions()
 				if enemy.active and distance(bullet.x, bullet.y, enemy.x, enemy.y) < enemy.r + 4 then
 					local bullet_angle = math.atan(bullet.vy, bullet.vx)
 					local spark_count = 5 + math.random(0, 3)
-					for _ = 1, spark_count do
-						local spread_angle = bullet_angle + math.pi + (math.random(-50, 49) * math.pi) / 180.0
-						local speed = 150.0 + math.random() * 250.0
-						spawn_particle(
-							bullet.x,
-							bullet.y,
-							math.cos(spread_angle) * speed,
-							math.sin(spread_angle) * speed,
-							argb(255, 255, 255, 200),
-							0.3 + math.random() * 0.4,
-							3.0 + math.random(0, 3)
-						)
-					end
+					emit_particles {
+						x = bullet.x,
+						y = bullet.y,
+						count = spark_count,
+						color = argb(255, 255, 255, 200),
+						angle = bullet_angle + math.pi,
+						spread = BULLET_SPARK_SPREAD,
+						speed_min = 150.0,
+						speed_max = 400.0,
+						life_min = 0.3,
+						life_max = 0.7,
+						size_min = 3.0,
+						size_max = 6.0,
+					}
 
 					bullet.active = false
 					enemy.hp = enemy.hp - 1
@@ -1875,20 +1872,18 @@ local function update_collisions()
 			for j = 1, 2 do
 				local bh = powerup.black_holes[j]
 				if bh.active and not bh.exploding and distance(bullet.x, bullet.y, bh.x, bh.y) < 30.0 then
-					for _ = 1, 3 do
-						local angle = math.atan(bh.y - bullet.y, bh.x - bullet.x)
-							+ (math.random(-30, 29) * math.pi) / 180.0
-						local speed = math.random(100, 179)
-						spawn_particle(
-							bullet.x,
-							bullet.y,
-							math.cos(angle) * speed,
-							math.sin(angle) * speed,
-							argb(255, 220, 150, 255),
-							0.3,
-							3.0
-						)
-					end
+					emit_particles {
+						x = bullet.x,
+						y = bullet.y,
+						count = 3,
+						color = argb(255, 220, 150, 255),
+						angle = math.atan(bh.y - bullet.y, bh.x - bullet.x),
+						spread = ATTRACT_SPARK_SPREAD,
+						speed_min = 100.0,
+						speed_max = 179.0,
+						life_min = 0.3,
+						size_min = 3.0,
+					}
 					bh.absorbed = bh.absorbed + 1
 					bullet.active = false
 					break
@@ -2563,9 +2558,6 @@ local function ensure_runtime_pools()
 	for i = 1, MAX_ENEMIES do
 		enemies[i] = { active = false, type = 0 }
 	end
-	for i = 1, MAX_PARTICLES do
-		particles[i] = { life = 0, max_life = 0 }
-	end
 	for i = 1, MAX_FLOAT_TEXTS do
 		feedback.float_texts[i] = { life = 0, max_life = 0, text = "", color = COLOR_WHITE }
 	end
@@ -2655,11 +2647,7 @@ local function clear_runtime_state()
 		enemy.active = false
 		enemy.type = 0
 	end
-	for i = 1, MAX_PARTICLES do
-		local particle = particles[i]
-		particle.life = 0
-		particle.max_life = 0
-	end
+	clear_particles()
 	for i = 1, MAX_FLOAT_TEXTS do
 		local float_text = feedback.float_texts[i]
 		float_text.life = 0
@@ -2719,22 +2707,6 @@ local function update_star_layer(stars, dt)
 		if star.y > MAP_H then
 			star.y = 0
 			star.x = math.random() * MAP_W
-		end
-	end
-end
-
-local function update_particles(dt)
-	for i = 1, MAX_PARTICLES do
-		local particle = particles[i]
-		if particle.life > 0 then
-			particle.life = particle.life - dt
-			particle.vx = particle.vx * (1.0 - 4.0 * dt)
-			particle.vy = particle.vy * (1.0 - 4.0 * dt)
-			particle.x = particle.x + particle.vx * dt
-			particle.y = particle.y + particle.vy * dt
-			if particle.life < 0 then
-				particle.life = 0
-			end
 		end
 	end
 end
@@ -2814,6 +2786,28 @@ local function world_scale()
 	local offset_x = (window_w - W * scale) * 0.5
 	local offset_y = (window_h - H * scale) * 0.5
 	return scale, offset_x, offset_y
+end
+
+local function sync_particle_service_frame(dt)
+	local scale, offset_x, offset_y = world_scale()
+	ltask.send(particle, "frame", {
+		dt = dt,
+		visible = state.scene == "combat" or state.scene == "death" or state.scene == "over",
+		view = {
+			scale = scale,
+			offset_x = offset_x,
+			offset_y = offset_y,
+		},
+		camera = {
+			x = camera.x,
+			y = camera.y,
+		},
+		shake = {
+			x = state.shake_x,
+			y = state.shake_y,
+			screen_y = state.screen_shake_y,
+		},
+	})
 end
 
 local function update_mouse_world()
@@ -2899,21 +2893,20 @@ local function update_player(dt)
 		state.thrust_particle_timer = 0
 		local rear_x = player.x - math.cos(player.angle) * 14.0
 		local rear_y = player.y - math.sin(player.angle) * 14.0
-		local spread = (math.random(-30, 29) * math.pi) / 180.0
-		local speed = math.random(350, 599)
-		local thrust_angle = player.angle + math.pi + spread
-		local r = powerup.energy_active and 255 or math.random(150, 254)
-		local g = powerup.energy_active and 240 or ((math.random(0, 1) == 0) and 255 or 220)
-		local b = math.random(200, 254)
-		spawn_particle(
-			rear_x,
-			rear_y,
-			math.cos(thrust_angle) * speed,
-			math.sin(thrust_angle) * speed,
-			particle_color(r, g, b),
-			0.35 + math.random() * 0.2,
-			math.random(2, 3)
-		)
+		emit_particles {
+			x = rear_x,
+			y = rear_y,
+			count = 1,
+			angle = player.angle + math.pi,
+			spread = THRUST_SPREAD,
+			color_range = powerup.energy_active and THRUST_ENERGY_COLOR_RANGE or THRUST_NORMAL_COLOR_RANGE,
+			speed_min = 350.0,
+			speed_max = 599.0,
+			life_min = 0.35,
+			life_max = 0.55,
+			size_min = 2.0,
+			size_max = 3.0,
+		}
 	end
 end
 
@@ -3020,28 +3013,6 @@ local function draw_enemies()
 			draw_masked_circle(glow, enemy.r * def.glow_scale, enemy.x, enemy.y)
 			if def.core_color then
 				draw_masked_circle(def.core_color, enemy.r * def.core_scale, enemy.x, enemy.y)
-			end
-		end
-	end
-end
-
-local function draw_particles()
-	for i = 1, MAX_PARTICLES do
-		local particle = particles[i]
-		if particle.life > 0 then
-			local alpha = particle.life / particle.max_life
-			local size = particle.size * alpha
-			if size > 0.5 and size < 20 then
-				local px = particle.x
-				local py = particle.y
-				draw_masked_circle(particle.color, size, px, py)
-				if size > 1.5 and alpha > 0.2 then
-					draw_masked_circle(particle_alpha(particle.color, alpha * PARTICLE_GLOW_ALPHA), size * 2.5, px, py)
-				end
-				if alpha > 0.6 and size > 2 then
-					draw_masked_circle(argb(quantize_byte(alpha * PARTICLE_CORE_ALPHA, 16), 255, 255, 255), size * 1.3,
-						px, py)
-				end
 			end
 		end
 	end
@@ -3313,7 +3284,6 @@ local function draw_world()
 		draw_player()
 	end
 	powerup.draw()
-	draw_particles()
 	feedback.draw_float_texts()
 end
 
@@ -3403,7 +3373,6 @@ do
 		update_enemies(dt)
 		update_collisions()
 		powerup.update_events(dt)
-		update_particles(dt)
 		update_grid(dt)
 		update_timers(dt)
 		powerup.update(dt)
@@ -3420,7 +3389,6 @@ do
 	local function update_death_scene(dt)
 		update_star_layer(stars_far, dt)
 		update_star_layer(stars_near, dt)
-		update_particles(dt)
 		update_grid(dt)
 		update_timers(dt)
 		powerup.update(dt)
@@ -3434,7 +3402,6 @@ do
 	local function update_game_over_scene(dt)
 		update_star_layer(stars_far, dt)
 		update_star_layer(stars_near, dt)
-		update_particles(dt)
 		update_grid(dt)
 		update_timers(dt)
 		powerup.update(dt)
@@ -3502,7 +3469,6 @@ do
 
 	local function draw_death_world()
 		draw_backdrop(true)
-		draw_particles()
 	end
 
 	local function draw_death_overlay()
@@ -3514,7 +3480,6 @@ do
 
 	local function draw_game_over_world()
 		draw_backdrop(false)
-		draw_particles()
 	end
 
 	local function draw_game_over_overlay()
@@ -3649,6 +3614,10 @@ end
 local callback = {}
 
 function callback.frame()
+	if init then
+		init()
+	end
+
 	local _, now = ltask.now()
 	local dt = 1.0 / 60.0
 	if last_tick ~= nil then
@@ -3672,6 +3641,7 @@ function callback.frame()
 	if current_scene ~= nil then
 		state.sync_scene(current_scene)
 	end
+	sync_particle_service_frame(dt)
 
 	view.begin(batch)
 	batch:add(quad { width = W, height = H, color = COLOR_BLACK }, 0, 0)
