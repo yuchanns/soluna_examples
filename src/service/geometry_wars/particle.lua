@@ -23,7 +23,6 @@ local current_batch
 local current_index = 1
 local active_n = 0
 local ticking = false
-local inited = false
 local quit = false
 
 local frame = {
@@ -248,30 +247,34 @@ end
 
 local S = {}
 
-function S.init()
-	if inited then
-		return
-	end
+local init; do
+	function init()
+		render = ltask.uniqueservice "render"
+		batch_id = ltask.call(render, "register_batch", ltask.self())
+		local _, now = ltask.now()
+		math.randomseed(now + 0x6765)
+		current_batch = batches[current_index]
+		current_batch:reset()
 
-	inited = true
-	render = ltask.uniqueservice "render"
-	batch_id = ltask.call(render, "register_batch", ltask.self())
-	local _, now = ltask.now()
-	math.randomseed(now + 0x6765)
-	current_batch = batches[current_index]
-	current_batch:reset()
-
-	ltask.fork(function()
-		while not quit do
-			if not ticking then
-				ticking = true
-				ltask.send(ltask.self(), "tick")
+		ltask.fork(function()
+			while not quit do
+				if not ticking then
+					ticking = true
+					ltask.send(ltask.self(), "tick")
+				end
+				ltask.call(render, "submit_batch", batch_id, current_batch:ptr())
 			end
-			ltask.call(render, "submit_batch", batch_id, current_batch:ptr())
-		end
-	end)
+		end)
 
-	ltask.sleep(0)
+		ltask.sleep(0)
+	end
+end
+
+function S.init()
+	if init then
+		init()
+		init = nil
+	end
 end
 
 function S.frame(next_frame)
@@ -292,11 +295,7 @@ function S.frame(next_frame)
 	frame.screen_shake_y = shake.screen_y or 0.0
 end
 
-function S.emit(emitter)
-	if inited then
-		emit(emitter)
-	end
-end
+S.emit = emit
 
 function S.clear()
 	clear_particles()
@@ -316,11 +315,6 @@ end
 function S.quit()
 	quit = true
 	current_batch = nil
-	S.frame = function() end
-	S.emit = function() end
-	S.clear = function() end
-	S.tick = function() end
-	S.quit = function() end
 	for i = 1, #batches do
 		batches[i]:release()
 	end
