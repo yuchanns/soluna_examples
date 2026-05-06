@@ -104,6 +104,29 @@ function exists(filePath: string): Promise<boolean> {
   return stat(filePath).then(() => true, () => false)
 }
 
+async function collectLuaFiles(rootDir: string, relativeRoot: string): Promise<string[]> {
+  if (!(await exists(rootDir))) {
+    return []
+  }
+
+  const files: string[] = []
+  const entries = (await readdir(rootDir, { withFileTypes: true }))
+    .sort((left, right) => left.name.localeCompare(right.name))
+
+  for (const entry of entries) {
+    const fullPath = path.join(rootDir, entry.name)
+    const relativePath = path.join(relativeRoot, entry.name)
+    if (entry.isDirectory()) {
+      files.push(...await collectLuaFiles(fullPath, relativePath))
+    }
+    else if (entry.isFile() && entry.name.endsWith('.lua')) {
+      files.push(relativePath.split(path.sep).join('/'))
+    }
+  }
+
+  return files
+}
+
 export async function loadGames(): Promise<GameEntry[]> {
   const sourceFiles = (await readdir(sourceDir))
     .sort((left, right) => left.localeCompare(right))
@@ -114,11 +137,16 @@ export async function loadGames(): Promise<GameEntry[]> {
       .map(name => name.slice(0, -5)),
   )
   const sharedLuaFiles = luaFiles.filter(name => !gameIds.has(name.slice(0, -4)))
-  const sharedLuaSources = new Map(
+  const serviceLuaFiles = await collectLuaFiles(path.join(sourceDir, 'service'), 'service')
+  const runtimeSupportFiles = [
+    ...sharedLuaFiles,
+    ...serviceLuaFiles,
+  ]
+  const runtimeSupportSources = new Map(
     await Promise.all(
-      sharedLuaFiles.map(async (name) => [
+      runtimeSupportFiles.map(async (name) => [
         name,
-        await readFile(path.join(sourceDir, name), 'utf8'),
+        await readFile(path.join(sourceDir, ...name.split('/')), 'utf8'),
       ]),
     ),
   )
@@ -144,9 +172,9 @@ export async function loadGames(): Promise<GameEntry[]> {
         luaSource,
         gameSource,
         runtimeGameSource: buildRuntimeGameSource(gameSource),
-        runtimeFiles: sharedLuaFiles.map(sharedName => ({
-          path: sharedName,
-          source: sharedLuaSources.get(sharedName) || '',
+        runtimeFiles: runtimeSupportFiles.map(runtimePath => ({
+          path: runtimePath,
+          source: runtimeSupportSources.get(runtimePath) || '',
         })),
         assetArchivePath: await exists(path.join(sourceDir, 'asset', id)) ? `runtime/assets/${id}.zip` : null,
       }
