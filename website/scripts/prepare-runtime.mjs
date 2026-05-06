@@ -11,6 +11,7 @@ const runtimeDir = path.join(websiteDir, 'public', 'runtime')
 const sourceDir = path.join(repoRoot, 'src')
 const sourceAssetDir = path.join(sourceDir, 'asset')
 const runtimeAssetDir = path.join(runtimeDir, 'assets')
+const runtimeExtluaDir = path.join(runtimeDir, 'extlua')
 
 function resolveRuntimePath(name, fallback) {
   const configuredPath = process.env[name]
@@ -25,6 +26,34 @@ function resolveRuntimePath(name, fallback) {
 
 function exists(filePath) {
   return stat(filePath).then(() => true, () => false)
+}
+
+function unquote(value) {
+  const trimmed = value.trim()
+  if ((trimmed.startsWith('"') && trimmed.endsWith('"')) || (trimmed.startsWith('\'') && trimmed.endsWith('\''))) {
+    return trimmed.slice(1, -1)
+  }
+  return trimmed
+}
+
+function parseModuleList(value) {
+  const normalized = value
+    .trim()
+    .replace(/^[\[{(]/, '')
+    .replace(/[\]})]$/, '')
+
+  return normalized
+    .split(/[,\s]+/)
+    .map(unquote)
+    .filter(Boolean)
+}
+
+function normalizeExtluaModuleName(name) {
+  const parts = name.split('.')
+  if (parts.length === 0 || parts.some(part => !/^[A-Za-z0-9_-]+$/.test(part))) {
+    throw new Error(`Invalid extlua module name: ${name}`)
+  }
+  return parts.join('/')
 }
 
 async function ensureFile(filePath, label) {
@@ -47,6 +76,49 @@ async function collectFiles(rootDir) {
     }
   }
   return files
+}
+
+async function collectExtluaModules() {
+  const entries = await readdir(sourceDir, { withFileTypes: true })
+  const modules = new Set()
+
+  for (const entry of entries) {
+    if (!entry.isFile() || !entry.name.endsWith('.game')) {
+      continue
+    }
+
+    const gameSource = await readFile(path.join(sourceDir, entry.name), 'utf8')
+    for (const line of gameSource.split(/\r?\n/)) {
+      const match = line.match(/^\s*extlua_preload\s*:\s*(.+?)\s*$/i)
+      if (!match) {
+        continue
+      }
+      for (const moduleName of parseModuleList(match[1])) {
+        modules.add(moduleName)
+      }
+    }
+  }
+
+  return [...modules].sort()
+}
+
+async function copyExtluaModules() {
+  const moduleNames = await collectExtluaModules()
+  if (moduleNames.length === 0) {
+    return 0
+  }
+
+  const extluaBinDir = resolveRuntimePath('EXTLUA_BIN_DIR', path.join(sourceDir, 'bin'))
+  for (const moduleName of moduleNames) {
+    const runtimePath = normalizeExtluaModuleName(moduleName)
+    const sourcePath = path.join(extluaBinDir, `${runtimePath}.wasm`)
+    const targetPath = path.join(runtimeExtluaDir, `${runtimePath}.wasm`)
+    await ensureFile(sourcePath, `extlua wasm module ${moduleName}`)
+    await mkdir(path.dirname(targetPath), { recursive: true })
+    await copyFile(sourcePath, targetPath)
+  }
+
+  return moduleNames.length
 }
 
 async function buildAssetArchives() {
@@ -103,8 +175,11 @@ async function main() {
     await copyFile(solunaWasmMapPath, path.join(runtimeDir, 'soluna.wasm.map'))
   }
 
+  const extluaCount = await copyExtluaModules()
   const archiveCount = await buildAssetArchives()
-  process.stdout.write(`Prepared website runtime in ${runtimeDir} (${archiveCount} asset archive${archiveCount == 1 ? '' : 's'})\n`)
+  process.stdout.write(
+    `Prepared website runtime in ${runtimeDir} (${archiveCount} asset archive${archiveCount == 1 ? '' : 's'}, ${extluaCount} extlua module${extluaCount == 1 ? '' : 's'})\n`,
+  )
 }
 
 main().catch((error) => {

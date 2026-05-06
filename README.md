@@ -52,6 +52,12 @@ luamake -mode release -compiler emcc
 cd ..
 ```
 
+Build the web extlua side modules:
+
+```bash
+luamake -mode release -compiler emcc
+```
+
 Then start the Astro dev server:
 
 ```bash

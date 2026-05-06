@@ -31,6 +31,12 @@ jobs:
         with:
           soluna_path: soluna
 
+      - name: Build Extlua Modules
+        uses: ./.github/workflows/actions/extlua
+        id: extlua
+        with:
+          project_path: "."
+
       - name: Build Astro
         uses: withastro/action@v6
         env:
@@ -39,6 +45,7 @@ jobs:
           SOLUNA_JS_PATH: ${{ steps.build.outputs.SOLUNA_JS_PATH }}
           SOLUNA_WASM_PATH: ${{ steps.build.outputs.SOLUNA_WASM_PATH }}
           SOLUNA_WASM_MAP_PATH: ${{ steps.build.outputs.SOLUNA_WASM_MAP_PATH }}
+          EXTLUA_BIN_DIR: ${{ steps.extlua.outputs.EXTLUA_BIN_DIR }}
         with:
           path: website
           node-version: 24

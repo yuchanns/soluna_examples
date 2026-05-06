@@ -15,6 +15,7 @@ export interface GameEntry {
     path: string
     source: string
   }>
+  extluaModules: string[]
   assetArchivePath?: string | null
 }
 
@@ -42,6 +43,7 @@ function parseConfig(source: string) {
   let entry: string | undefined
   let width = 640
   let height = 480
+  const extluaModules: string[] = []
 
   for (const line of source.split(/\r?\n/)) {
     const match = line.match(/^\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*:\s*(.+?)\s*$/)
@@ -71,6 +73,9 @@ function parseConfig(source: string) {
         height = parsed
       }
     }
+    else if (key === 'extlua_preload') {
+      extluaModules.push(...parseModuleList(value))
+    }
   }
 
   return {
@@ -78,7 +83,20 @@ function parseConfig(source: string) {
     entry,
     width,
     height,
+    extluaModules,
   }
+}
+
+function parseModuleList(value: string): string[] {
+  const normalized = value
+    .trim()
+    .replace(/^[\[{(]/, '')
+    .replace(/[\]})]$/, '')
+
+  return normalized
+    .split(/[,\s]+/)
+    .map(unquote)
+    .filter(Boolean)
 }
 
 function buildRuntimeGameSource(source: string): string {
@@ -138,9 +156,11 @@ export async function loadGames(): Promise<GameEntry[]> {
   )
   const sharedLuaFiles = luaFiles.filter(name => !gameIds.has(name.slice(0, -4)))
   const serviceLuaFiles = await collectLuaFiles(path.join(sourceDir, 'service'), 'service')
+  const extluaLuaFiles = await collectLuaFiles(path.join(sourceDir, 'extlua'), 'extlua')
   const runtimeSupportFiles = [
     ...sharedLuaFiles,
     ...serviceLuaFiles,
+    ...extluaLuaFiles,
   ]
   const runtimeSupportSources = new Map(
     await Promise.all(
@@ -176,6 +196,7 @@ export async function loadGames(): Promise<GameEntry[]> {
           path: runtimePath,
           source: runtimeSupportSources.get(runtimePath) || '',
         })),
+        extluaModules: [...new Set(config.extluaModules)],
         assetArchivePath: await exists(path.join(sourceDir, 'asset', id)) ? `runtime/assets/${id}.zip` : null,
       }
     }),

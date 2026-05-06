@@ -1,0 +1,102 @@
+name: Build Extlua Modules
+description: Build Soluna extlua side modules for the web runtime
+
+inputs:
+  project_path:
+    description: "The path to the example repository. Defaults to ."
+    required: false
+    default: "."
+  luamake_version:
+    description: "LuaMake commit SHA used to build."
+    required: false
+    default: "5bedfce66f075a9f68b1475747738b81b3b41c25"
+  emsdk_version:
+    description: "Emscripten SDK version."
+    required: false
+    default: "4.0.17"
+  build_mode:
+    description: "LuaMake build mode."
+    required: false
+    default: "release"
+  target:
+    description: "Optional LuaMake target. Empty builds the default target."
+    required: false
+    default: ""
+
+outputs:
+  EXTLUA_BIN_DIR:
+    description: "The directory containing built extlua WebAssembly side modules."
+    value: ${{ steps.set-output.outputs.EXTLUA_BIN_DIR }}
+  EXTLUA_WASM_COUNT:
+    description: "The number of built extlua WebAssembly side modules."
+    value: ${{ steps.set-output.outputs.EXTLUA_WASM_COUNT }}
+
+runs:
+  using: "composite"
+  steps:
+    - name: Get the project commit
+      id: refs
+      working-directory: ${{ inputs.project_path }}
+      shell: bash
+      run: |
+        echo "commit=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+    - name: Cache extlua build
+      uses: actions/cache@v4
+      id: cache
+      with:
+        path: |
+          ${{ inputs.project_path }}/build
+          ${{ inputs.project_path }}/src/bin
+        key: ${{ runner.os }}-extlua-build-${{ steps.refs.outputs.commit }}-${{ inputs.build_mode }}-${{ inputs.luamake_version }}-${{ inputs.emsdk_version }}
+
+    - name: Checkout all submodules
+      if: steps.cache.outputs.cache-hit != 'true'
+      working-directory: ${{ inputs.project_path }}
+      shell: bash
+      run: |
+        git submodule update --init --recursive
+
+    - name: Setup LuaMake
+      if: steps.cache.outputs.cache-hit != 'true'
+      uses: yuchanns/actions-luamake@v1
+      with:
+        luamake-version: ${{ inputs.luamake_version }}
+
+    - name: Setup Emscripten
+      if: runner.os == 'Linux' && steps.cache.outputs.cache-hit != 'true'
+      uses: mymindstorm/setup-emsdk@v14
+      with:
+        version: ${{ inputs.emsdk_version }}
+        actions-cache-folder: 'emsdk-cache'
+
+    - name: Build extlua side modules
+      if: runner.os == 'Linux' && steps.cache.outputs.cache-hit != 'true'
+      working-directory: ${{ inputs.project_path }}
+      shell: bash
+      run: |
+        build_target="${{ inputs.target }}"
+        if [ -n "$build_target" ]; then
+          luamake -mode "${{ inputs.build_mode }}" -compiler emcc "$build_target"
+        else
+          luamake -mode "${{ inputs.build_mode }}" -compiler emcc
+        fi
+
+    - name: Set output
+      id: set-output
+      working-directory: ${{ inputs.project_path }}
+      shell: bash
+      run: |
+        project_root=$(pwd -P)
+        extlua_bin_dir="$project_root/src/bin"
+        if [ ! -d "$extlua_bin_dir" ]; then
+          echo "extlua bin directory not found: $extlua_bin_dir" >&2
+          exit 1
+        fi
+        wasm_count=$(find "$extlua_bin_dir" -type f -name "*.wasm" | wc -l | tr -d '[:space:]')
+        if [ "$wasm_count" = "0" ]; then
+          echo "No extlua wasm modules found in $extlua_bin_dir" >&2
+          exit 1
+        fi
+        echo "EXTLUA_BIN_DIR=$extlua_bin_dir" >> "$GITHUB_OUTPUT"
+        echo "EXTLUA_WASM_COUNT=$wasm_count" >> "$GITHUB_OUTPUT"

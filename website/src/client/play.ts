@@ -39,6 +39,7 @@ interface PlayOptions {
     path: string
     source: string
   }>
+  extluaModules: string[]
   assetArchivePath?: string | null
 }
 
@@ -93,6 +94,14 @@ function ensureParentDirectory(runtimeModule: RuntimeModule, filePath: string): 
     return
   }
   runtimeModule.FS_createPath('/', dir.slice(1), true, true)
+}
+
+function normalizeExtluaModuleName(name: string): string {
+  const parts = name.split('.')
+  if (parts.length === 0 || parts.some(part => !/^[A-Za-z0-9_-]+$/.test(part))) {
+    throw new Error(`Invalid extlua module name: ${name}`)
+  }
+  return parts.join('/')
 }
 
 async function fetchArrayBuffer(url: string): Promise<ArrayBuffer> {
@@ -291,6 +300,7 @@ async function loadRuntimeAssets(
   exampleSource: string,
   gameConfig: string,
   runtimeFiles: PlayOptions['runtimeFiles'],
+  extluaModules: PlayOptions['extluaModules'],
   assetArchivePath: PlayOptions['assetArchivePath'],
 ) {
   setStatus('Preparing assets...')
@@ -300,6 +310,15 @@ async function loadRuntimeAssets(
     fetchArrayBuffer(`${basePath}fonts/arial.ttf`),
     assetArchivePath ? fetchArrayBuffer(`${basePath}${assetArchivePath}`) : Promise.resolve(null),
   ])
+  const extluaWasmFiles = await Promise.all(
+    extluaModules.map(async (moduleName) => {
+      const runtimePath = normalizeExtluaModuleName(moduleName)
+      return {
+        name: moduleName,
+        data: normalizeFileData(await fetchArrayBuffer(`${basePath}runtime/extlua/${runtimePath}.wasm`)),
+      }
+    }),
+  )
 
   return {
     fontZip: zipSync({
@@ -313,6 +332,7 @@ async function loadRuntimeAssets(
       ),
     }),
     assetZip: assetZip ? normalizeFileData(assetZip) : null,
+    extluaWasmFiles,
   }
 }
 
@@ -333,8 +353,23 @@ async function startRuntime(
     files.push({ path: '/data/asset.zip', data: assets.assetZip, canOwn: true })
   }
 
+  for (const file of assets.extluaWasmFiles) {
+    files.push({
+      path: `/data/${normalizeExtluaModuleName(file.name)}.wasm`,
+      data: file.data,
+      canOwn: true,
+    })
+  }
+
   zipArchives.push('/data/font.zip')
   files.push({ path: '/data/font.zip', data: assets.fontZip, canOwn: true })
+
+  const runtimeArguments = [
+    `zipfile=${zipArchives.join(':')}`,
+  ]
+  if (assets.extluaWasmFiles.length > 0) {
+    runtimeArguments.push('cpath=/data/?.wasm')
+  }
 
   return createRuntimeHandle(
     {
@@ -357,9 +392,7 @@ async function startRuntime(
       },
     },
     {
-      arguments: [
-        `zipfile=${zipArchives.join(':')}`,
-      ],
+      arguments: runtimeArguments,
       files,
     },
   )
@@ -399,6 +432,7 @@ export default async function initPlay(options: PlayOptions): Promise<void> {
       options.exampleSource,
       options.gameConfig,
       options.runtimeFiles,
+      options.extluaModules,
       options.assetArchivePath,
     )
   }
@@ -409,6 +443,9 @@ export default async function initPlay(options: PlayOptions): Promise<void> {
     }
     else if (options.assetArchivePath && message.includes(options.assetArchivePath)) {
       setStatus('Failed to load bundled game assets.')
+    }
+    else if (message.includes('/runtime/extlua/')) {
+      setStatus('Failed to load extlua module.')
     }
     else {
       setStatus('Failed to prepare runtime assets.')
