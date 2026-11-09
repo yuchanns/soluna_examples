@@ -205,7 +205,7 @@ end
 
 local start = ltask.counter()
 local time = 0
-local tod = 0
+local day = 0
 local offset = 0
 local mouse_x, mouse_y = -1000, -1000
 local cursor = 0
@@ -226,7 +226,7 @@ local function pass(target, mode, input, ...)
 	for i = 1, select("#", ...) do
 		batch:add(matsakura.texture((select(i, ...))))
 	end
-	batch:add(matsakura.pass(input, mode, tod, time, mouse_x, mouse_y))
+	batch:add(matsakura.pass(input, mode, day, time, mouse_x, mouse_y))
 	batch:add(mattarget.target())
 end
 
@@ -234,7 +234,8 @@ local callback = {}
 
 function callback.frame()
 	time = ltask.counter() - start
-	tod = 1 - math.abs(1 - (time + offset) / DAY % 1 * 2)
+	day = (time + offset) / DAY % 1
+	local tod = 1 - math.abs(1 - day * 2)
 	local x = math.min(math.max(tod * 2 - 0.5, 0), 1) * 100 // 1
 	if x ~= fade then
 		fade = x

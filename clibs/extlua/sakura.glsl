@@ -34,6 +34,8 @@ out vec4 frag_color;
 
 const vec2 RES = vec2(320.0, 200.0);
 const vec2 ORIGIN = vec2(160.0, 40.0);
+const vec2 BACK = vec2(-0.70711, -0.70711);
+const vec2 RIGHT = vec2(0.70711, -0.70711);
 const vec3 LUMA = vec3(0.2126, 0.7152, 0.0722);
 
 const vec4 BLOCK = vec4(104.0, 22.0, -3.0, 16.0);
@@ -102,6 +104,8 @@ const float BLOOM = 2.4;
 const int BAYER[16] = int[16](0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5);
 
 struct tod_state {
+	float t;
+	vec2 sun, moon;
 	vec3 sky_top, sky_mid, sky_bot;
 	vec3 amb;
 	vec3 dir_col;
@@ -165,24 +169,35 @@ float key1(float a, float b, float c, float t) {
 	return t < 0.5 ? mix(a, b, smoothstep(0.0, 0.5, t)) : mix(b, c, smoothstep(0.5, 1.0, t));
 }
 
-tod_state tod(float t) {
+vec2 orbit(float s) {
+	float a = s * 1.5708;
+	return vec2(160.0 + 135.0 * sin(a) + 50.0 * cos(a), 165.0 - 143.0 * cos(a));
+}
+
+vec3 toward(vec2 p) {
+	float r = (p.x - 160.0) / 145.0;
+	float z = (165.0 - p.y) / 165.0;
+	return normalize(vec3((sqrt(1.0 - r * r) * BACK + r * RIGHT) * sqrt(1.0 - z * z), max(z, 0.03)));
+}
+
+tod_state tod(float day) {
 	tod_state o;
+	float t = 1.0 - abs(1.0 - 2.0 * day);
+	o.t = t;
+	o.sun = orbit((fract(day + 0.5) - 0.5) / 0.3);
+	o.moon = orbit(clamp((day - 0.5) / 0.15, -2.0, 2.0));
 	o.sky_top = key3(vec3(0.32, 0.58, 0.88), vec3(0.22, 0.20, 0.45), vec3(0.015, 0.025, 0.08), t);
 	o.sky_mid = key3(vec3(0.53, 0.76, 0.94), vec3(0.78, 0.42, 0.50), vec3(0.04, 0.06, 0.16), t);
 	o.sky_bot = key3(vec3(0.80, 0.91, 0.97), vec3(1.00, 0.70, 0.44), vec3(0.09, 0.11, 0.24), t);
 	o.amb = key3(vec3(0.60, 0.67, 0.80) * 0.50, vec3(0.50, 0.40, 0.68) * 0.24, vec3(0.18, 0.25, 0.55) * 0.22, t);
-	vec3 sun_day = normalize(vec3(-0.62, 0.50, 0.95));
-	vec3 sun_dusk = normalize(vec3(0.86, 0.30, 0.30));
-	vec3 moon = normalize(vec3(-0.45, 0.30, 1.00));
 	float su = smoothstep(0.0, 0.5, t);
-	vec3 sun_dir = normalize(mix(sun_day, sun_dusk, su));
 	vec3 sun_col = mix(vec3(1.00, 0.95, 0.86) * 1.45, vec3(1.00, 0.58, 0.32) * 3.0, su);
 	if (t < 0.65) {
-		o.dir = sun_dir;
+		o.dir = toward(o.sun);
 		o.dir_col = sun_col * (1.0 - smoothstep(0.54, 0.64, t));
 		o.dir_soft = mix(0.03, 0.022, su);
 	} else {
-		o.dir = moon;
+		o.dir = toward(o.moon);
 		o.dir_col = vec3(0.50, 0.62, 1.00) * 0.30 * smoothstep(0.66, 0.86, t);
 		o.dir_soft = 0.035;
 	}
@@ -226,29 +241,36 @@ vec3 world_pos(vec2 scr, float z) {
 	return vec3(r.y + z + r.x * 0.5, r.y + z - r.x * 0.5, z);
 }
 
+vec4 star(vec2 p, float cell, float chance, vec2 level, float spread) {
+	vec2 id = floor(p / cell);
+	vec2 at = id * cell + 1.0 + floor(vec2(hash12(id + 0.3), hash12(id + 0.7)) * (cell - 2.0));
+	vec2 d = abs(floor(p) - at);
+	float w = step(hash12(id + 0.5), chance) * (d.x + d.y < 0.5 ? 1.0 : (d.x + d.y < 1.5 ? spread : 0.0));
+	float v = hash12(id + 0.9);
+	vec3 col = v < 0.33 ? vec3(200.0, 200.0, 255.0) : (v < 0.66 ? vec3(180.0, 220.0, 255.0) : vec3(220.0));
+	return vec4(col / 255.0, w * mix(level.x, level.y, hash12(id + 0.1)));
+}
+
 vec3 sky_color(vec2 scr, tod_state td) {
-	float t = prm.x;
 	float time = prm.y;
 	float y = scr.y / RES.y;
 	vec3 c = y < 0.5 ? mix(td.sky_top, td.sky_mid, smoothstep(0.0, 0.5, y)) : mix(td.sky_mid, td.sky_bot, smoothstep(0.5, 1.0, y));
 	vec2 ps = floor(scr);
-	float h = hash12(ps * 1.37 + 11.0);
-	if (h > 0.9965 && y < 0.75) {
-		float tw = 0.55 + 0.45 * sin(time * (1.5 + h * 40.0) + h * 300.0);
-		c = mix(c, vec3(0.92, 0.94, 1.0), td.night * tw * (1.0 - y));
-	}
-	vec2 sun = vec2(284.0, 66.0);
-	float sd = length(ps + 0.5 - sun);
-	float sun_vis = smoothstep(0.15, 0.4, t) * (1.0 - smoothstep(0.58, 0.66, t));
-	c = mix(c, vec3(1.0, 0.86, 0.55), sun_vis * (1.0 - smoothstep(8.0, 8.5, sd)));
-	c += vec3(1.0, 0.55, 0.3) * sun_vis * 0.35 * exp(-sd * 0.06);
-	vec2 moon = vec2(52.0, 30.0);
-	float md = length(ps + 0.5 - moon);
-	float moon_vis = smoothstep(0.62, 0.85, t);
+	float a = td.night * (1.0 - y) * (1.0 - smoothstep(0.55, 0.8, y));
+	vec4 far = star(ps + vec2((prm.x - 0.5) * 40.0, 0.0), 7.0, 0.2, vec2(0.35, 0.6), 0.0);
+	vec4 near = star(ps + vec2((prm.x - 0.5) * 100.0, 0.0), 19.0, 0.3, vec2(0.7, 1.0), 0.45);
+	c = mix(mix(c, far.rgb, far.a * a), near.rgb, near.a * a);
+	float su = smoothstep(0.0, 0.5, td.t);
+	float sd = length(ps + 0.5 - td.sun);
+	float sun_vis = smoothstep(168.0, 160.0, td.sun.y);
+	c = mix(c, mix(vec3(1.0, 0.97, 0.88), vec3(1.0, 0.86, 0.55), su), sun_vis * (1.0 - smoothstep(8.0, 8.5, sd)));
+	c += mix(vec3(1.0, 0.9, 0.75), vec3(1.0, 0.55, 0.3), su) * sun_vis * 0.35 * exp(-sd * 0.06);
+	float md = length(ps + 0.5 - td.moon);
+	float moon_vis = smoothstep(168.0, 160.0, td.moon.y);
 	if (md < 7.5) {
 		float crater = step(0.72, vnoise(ps * 0.55 + 3.0));
 		vec3 mc = mix(vec3(0.93, 0.94, 0.86), vec3(0.74, 0.77, 0.80), crater);
-		if (length(ps + 0.5 - moon - vec2(2.5, -2.0)) < 7.0 && md > 5.5) {
+		if (length(ps + 0.5 - td.moon - vec2(2.5, -2.0)) < 7.0 && md > 5.5) {
 			mc *= 0.92;
 		}
 		c = mix(c, mc, moon_vis);
@@ -412,7 +434,7 @@ vec3 light(ivec2 ip, vec2 scr) {
 	vec2 ms = floor(prm.zw) + 0.5;
 	vec4 mg = tex2(clamp(ivec2(ms), ivec2(0), ivec2(RES) - 1));
 	vec3 mp = world_pos(ms, mg.a > 0.5 ? height(mg) : 0.0) + MOUSE_LIFT;
-	vec3 mc = MOUSE_COLOR * mix(1.2, 5.0, smoothstep(0.1, 0.6, prm.x));
+	vec3 mc = MOUSE_COLOR * mix(1.2, 5.0, smoothstep(0.1, 0.6, td.t));
 	vec3 orb = mc * 0.3 * (1.0 - smoothstep(0.9, 1.6, length(scr - ms)));
 	vec4 alb = tex0(ip);
 	if (alb.a < 0.5) {

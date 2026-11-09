@@ -16,7 +16,7 @@ void materialapi_init(lua_State *L);
 
 struct pass_data {
 	float time;
-	uint16_t tod;
+	uint16_t day;
 	int16_t x;
 	int16_t y;
 	uint16_t mode;
@@ -34,7 +34,7 @@ static material_error
 submit_sakura(const struct material_item *item, void *out) {
 	const struct pass_data *d = (const struct pass_data *)item->data;
 	struct sakura_inst *inst = (struct sakura_inst *)out;
-	inst->param[0] = d->tod / 65535.0f;
+	inst->param[0] = d->day / 65535.0f;
 	inst->param[1] = d->time;
 	inst->param[2] = d->x;
 	inst->param[3] = d->y;
@@ -72,7 +72,7 @@ lpass(lua_State *L) {
 	static const char *modes[] = { "light", "water", "bright", "blur_x", "blur_y", "grade", NULL };
 	struct pass_data d;
 	d.mode = luaL_checkoption(L, 2, NULL, modes);
-	d.tod = (uint16_t)(luaL_optnumber(L, 3, 0) * 65535.0 + 0.5);
+	d.day = (uint16_t)(luaL_optnumber(L, 3, 0) * 65535.0 + 0.5);
 	d.time = (float)luaL_optnumber(L, 4, 0);
 	d.x = (int16_t)luaL_optinteger(L, 5, 0);
 	d.y = (int16_t)luaL_optinteger(L, 6, 0);
