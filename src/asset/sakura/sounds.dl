@@ -19,3 +19,10 @@ filename : asset/sakura/sounds/guitar_night.wav
 group : music
 loop : true
 stream : true
+
+--
+name : crickets
+filename : asset/sakura/sounds/crickets.wav
+group : sound
+loop : true
+stream : true

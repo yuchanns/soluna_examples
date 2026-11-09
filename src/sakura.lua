@@ -183,6 +183,7 @@ soluna.load_sounds "asset/sakura/sounds.dl"
 soluna.play_sound "water"
 local day_guitar = assert(soluna.play_sound "guitar_day")
 local night_guitar = assert(soluna.play_sound("guitar_night", { volume = 0 }))
+local crickets = assert(soluna.play_sound("crickets", { volume = 0 }))
 day_guitar:seek(0)
 night_guitar:seek(0)
 local fade = 0
@@ -241,6 +242,7 @@ function callback.frame()
 		fade = x
 		day_guitar:set_volume(math.cos(x * math.pi / 200))
 		night_guitar:set_volume(math.sin(x * math.pi / 200))
+		crickets:set_volume(math.sin(x * math.pi / 200))
 	end
 	for _, p in ipairs(petals) do
 		local u = (time * p.sp + p.ph) % 12
