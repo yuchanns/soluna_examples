@@ -14,6 +14,7 @@ local H <const> = 200
 local OX <const> = 160
 local OY <const> = 40
 local DAY <const> = 120
+local CRICKETS <const> = 0.7
 local PATH <const> = "asset/sakura/"
 
 local OCC_X <const> = -12
@@ -187,6 +188,7 @@ local crickets = assert(soluna.play_sound("crickets", { volume = 0 }))
 day_guitar:seek(0)
 night_guitar:seek(0)
 local fade = 0
+local chorus = 0
 
 local petals = {}
 for i = 1, 16 do
@@ -242,7 +244,12 @@ function callback.frame()
 		fade = x
 		day_guitar:set_volume(math.cos(x * math.pi / 200))
 		night_guitar:set_volume(math.sin(x * math.pi / 200))
-		crickets:set_volume(math.sin(x * math.pi / 200))
+	end
+	local night = math.max(tod - 0.8, 0) * 5
+	local v = math.min(night * 4, 1) * (0.2 + 0.8 * night) * CRICKETS * 100 // 1
+	if v ~= chorus then
+		chorus = v
+		crickets:set_volume(v / 100)
 	end
 	for _, p in ipairs(petals) do
 		local u = (time * p.sp + p.ph) % 12

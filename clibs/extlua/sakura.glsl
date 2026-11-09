@@ -100,6 +100,7 @@ const float MOUSE_LIFT = 9.0;
 
 const int BLUR = 20;
 const float BLOOM = 2.4;
+const float WRAP = 640.0;
 
 const int BAYER[16] = int[16](0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5);
 
@@ -232,8 +233,21 @@ float vnoise(vec2 p) {
 	return mix(mix(a, b, f.x), mix(c, d, f.x), f.y);
 }
 
-float fbm2(vec2 p) {
-	return vnoise(p) * 0.57 + vnoise(p * 2.03 + 7.1) * 0.29 + vnoise(p * 4.1 + 3.3) * 0.14;
+float tnoise(vec2 p, float n) {
+	vec2 i = floor(p);
+	vec2 f = fract(p);
+	f = f * f * (3.0 - 2.0 * f);
+	vec2 x = mod(vec2(i.x, i.x + 1.0), n);
+	float a = hash12(vec2(x.x, i.y));
+	float b = hash12(vec2(x.y, i.y));
+	float c = hash12(vec2(x.x, i.y + 1.0));
+	float d = hash12(vec2(x.y, i.y + 1.0));
+	return mix(mix(a, b, f.x), mix(c, d, f.x), f.y);
+}
+
+float fbm2(float x, float n, float y) {
+	vec2 p = vec2(x * n / WRAP, y);
+	return tnoise(p, n) * 0.57 + tnoise(p * 2.0 + 7.1, n * 2.0) * 0.29 + tnoise(p * 4.0 + 3.3, n * 4.0) * 0.14;
 }
 
 vec3 world_pos(vec2 scr, float z) {
@@ -276,21 +290,22 @@ vec3 sky_color(vec2 scr, tod_state td) {
 		c = mix(c, mc, moon_vis);
 	}
 	c += vec3(0.35, 0.45, 0.70) * moon_vis * 0.25 * exp(-md * 0.09);
-	float drift = time * 1.5;
-	float top = 158.0 + 9.0 * (fbm2(vec2((ps.x + drift) * 0.022, 1.7)) - 0.5) * 2.0 + 4.0 * sin((ps.x + drift) * 0.09);
+	float x = mod(ps.x + floor(time * 2.0), WRAP);
+	float top = 158.0 + 9.0 * (fbm2(x, 14.0, 1.7) - 0.5) * 2.0 + 4.0 * sin(x * 9.0 * 6.2831853 / WRAP);
 	float d = ps.y - floor(top);
 	if (d >= 0.0) {
-		float band = fbm2(vec2((ps.x + drift * 0.6) * 0.05, ps.y * 0.11));
+		float band = fbm2(x, 32.0, ps.y * 0.11);
 		vec3 cc = d < 1.0 ? td.cloud_lit : (d < 4.0 + band * 6.0 ? td.cloud_mid : td.cloud_dark);
 		if (d > 9.0 && band > 0.55) {
 			cc = td.cloud_mid;
 		}
 		c = cc;
 	}
-	float pu = fbm2(vec2((ps.x - drift * 0.4) * 0.025, ps.y * 0.1));
+	float u = mod(ps.x + floor(time * 0.5), WRAP);
+	float pu = fbm2(u, 16.0, ps.y * 0.1);
 	float pu_mask = smoothstep(0.04, 0.12, y) * (1.0 - smoothstep(0.2, 0.34, y));
 	if (pu * pu_mask > 0.6) {
-		float rim = fbm2(vec2((ps.x - drift * 0.4) * 0.025, (ps.y + 1.5) * 0.1)) * pu_mask;
+		float rim = fbm2(u, 16.0, (ps.y + 1.5) * 0.1) * pu_mask;
 		c = rim > 0.6 ? td.cloud_mid : td.cloud_lit;
 	}
 	return to_linear(c);
