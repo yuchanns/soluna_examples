@@ -4,8 +4,15 @@ layout(binding=0) uniform vs_params {
 	float texsize;
 };
 
-in vec4 pos01;
-in vec4 pos23;
+struct sr_mat {
+	mat2 m;
+};
+
+layout(binding=0) readonly buffer sr_lut {
+	sr_mat sr[];
+};
+
+in vec3 position;
 in vec4 color;
 in uint packed0;
 in uint packed1;
@@ -25,17 +32,6 @@ float unpack_len12(uint value) {
 
 void main() {
 	uint index = uint(gl_VertexIndex);
-	vec2 pos;
-	if (index == 0u) {
-		pos = pos01.xy;
-	} else if (index == 1u) {
-		pos = pos01.zw;
-	} else if (index == 2u) {
-		pos = pos23.xy;
-	} else {
-		pos = pos23.zw;
-	}
-
 	float kind = float(packed0 & 0x0fu);
 	float radius = unpack_len14(packed0 >> 4);
 	float thickness = unpack_len14(packed0 >> 18);
@@ -53,7 +49,7 @@ void main() {
 	shape0 = vec4(kind, radius, thickness, inner_softness);
 	shape1 = vec4(outer_softness, power, 0.0, 0.0);
 
-	vec2 clip = pos * framesize;
+	vec2 clip = (local_pos * sr[int(position.z)].m + position.xy) * framesize;
 	gl_Position = vec4(clip.x - 1.0, clip.y + 1.0, 0.0, 1.0);
 }
 @end

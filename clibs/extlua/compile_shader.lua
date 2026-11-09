@@ -46,9 +46,9 @@ local function compile_shader(src, name)
 	local dep = name .. "_shader"
 	local target = lm.builddir .. "/" .. name
 	lm:runlua(dep) {
-		script = lm.basedir .. "/soluna/clibs/soluna/shader2c.lua",
-		inputs = lm.basedir .. "/" .. src,
-		outputs = lm.basedir .. "/" .. target,
+		script = lm.basedir / "soluna/clibs/soluna/shader2c.lua",
+		inputs = lm.basedir / src,
+		outputs = lm.basedir / target,
 		args = {
 			shdc,
 			"$in",
@@ -61,4 +61,5 @@ end
 
 return function(objdeps)
 	objdeps[#objdeps + 1] = compile_shader("clibs/extlua/radial_shape.glsl", "radial_shape.glsl.h")
+	objdeps[#objdeps + 1] = compile_shader("clibs/extlua/sakura.glsl", "sakura.glsl.h")
 end

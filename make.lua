@@ -56,4 +56,4 @@ lm:conf {
 
 lm:import "clibs/extlua/make.lua"
 
-lm:default "extlua_material"
+lm:default { "extlua_material", "extlua_sakura" }

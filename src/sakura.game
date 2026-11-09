@@ -1,0 +1,13 @@
+entry : sakura.lua
+extlua_entry : extlua_init
+extlua_preload : extlua_sakura
+extlua_material : { sakura sakura_texture }
+extlua_material_path : "extlua/material/?.lua"
+width : 960
+height : 600
+window_title : "Sakura"
+background : 0xff000000
+sprite_sampler :
+	max_anisotropy : 0
+	min_filter : nearest
+	mag_filter : nearest

@@ -1,0 +1,83 @@
+sprites :
+	---
+	name : block
+	x : -106
+	y : -2
+	---
+	name : fence
+	x : -66
+	y : -4
+	---
+	name : water
+	x : -78
+	y : 48
+	material : 2
+	---
+	name : waterfall
+	x : 10
+	y : 91
+	material : 3
+	---
+	name : path
+	x : -42
+	y : 35
+	---
+	name : rocks
+	x : -86
+	y : 39
+	---
+	name : props
+	x : -82
+	y : 32
+	material : 1
+	---
+	name : shrubs
+	x : -15
+	y : -4
+	material : 1
+	---
+	name : trunk
+	x : -38
+	y : -8
+	---
+	name : canopy
+	x : -50
+	y : -36
+	material : 1
+	---
+	name : house
+	x : -27
+	y : 15
+	---
+	name : roof
+	x : -33
+	y : 12
+	---
+	name : bench
+	x : 17
+	y : 55
+	---
+	name : lantern
+	x : -50
+	y : 22
+occluders :
+	---
+	name : house
+	x : 40
+	y : 36
+	---
+	name : tree
+	x : -2
+	y : 20
+	---
+	name : lantern
+	x : 22
+	y : 66
+	---
+	name : rocks
+	x : 4
+	y : 8
+	---
+	name : garden
+	x : 0
+	y : 0
