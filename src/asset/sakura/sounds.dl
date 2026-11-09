@@ -1,0 +1,21 @@
+--
+name : water
+filename : asset/sakura/sounds/water.wav
+group : sound
+volume : 0.5
+loop : true
+stream : true
+
+--
+name : guitar_day
+filename : asset/sakura/sounds/guitar_day.wav
+group : music
+loop : true
+stream : true
+
+--
+name : guitar_night
+filename : asset/sakura/sounds/guitar_night.wav
+group : music
+loop : true
+stream : true

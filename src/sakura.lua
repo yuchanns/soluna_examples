@@ -179,6 +179,14 @@ local bloom1 = soluna.target(W // 2, H // 2)
 local bloom2 = soluna.target(W // 2, H // 2)
 local final = soluna.target(W, H)
 
+soluna.load_sounds "asset/sakura/sounds.dl"
+soluna.play_sound "water"
+local day_guitar = assert(soluna.play_sound "guitar_day")
+local night_guitar = assert(soluna.play_sound("guitar_night", { volume = 0 }))
+day_guitar:seek(0)
+night_guitar:seek(0)
+local fade = 0
+
 local petals = {}
 for i = 1, 16 do
 	local function r(k)
@@ -227,6 +235,12 @@ local callback = {}
 function callback.frame()
 	time = ltask.counter() - start
 	tod = 1 - math.abs(1 - (time + offset) / DAY % 1 * 2)
+	local x = math.min(math.max(tod * 2 - 0.5, 0), 1) * 100 // 1
+	if x ~= fade then
+		fade = x
+		day_guitar:set_volume(math.cos(x * math.pi / 200))
+		night_guitar:set_volume(math.sin(x * math.pi / 200))
+	end
 	for _, p in ipairs(petals) do
 		local u = (time * p.sp + p.ph) % 12
 		local x = TREE_X + p.ox + u * 2.6 + math.sin(u * 1.7 + p.sw) * 2.2
